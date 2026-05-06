@@ -8,12 +8,12 @@ Una plataforma eCommerce simplificada diseñada para el tercer hackaton de La Cr
 - **Evento**: La Cripta Hackaton #3
 - **Tema**: eCommerce
 - **Patrocinador**: [Wapi](https://my.wapu.app/) - Procesador de pagos P2P Argentina
-- **Objetivo**: Crear una plataforma de ventas rápida y con integración nativa de Wapi
+- **Objetivo**: Crear una plataforma de ventas rápida y con integración nativa de Wapu
 
 ## 🎯 Propuesta
 
 Una alternativa **simple, rápida y moderna** a Shopify, pero especializada en:
-- ✅ Integración directa con Huapi (sin middleman)
+- ✅ Integración directa con Wapu (sin middleman)
 - ✅ Para vendedores latinoamericanos (especialmente Argentina)
 - ✅ Setup en minutos, no en horas
 - ✅ Comisiones competitivas

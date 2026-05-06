@@ -1,6 +1,6 @@
 # 🛍️ Wapify
 
-**Wapify** = Shopify + Wapi (Procesador de Pagos P2P)
+**Wapify** = Shopify + Wapu (Procesador de Pagos P2P)
 
 Una plataforma eCommerce simplificada diseñada para el tercer hackaton de La Cripta, enfocada en integración sin fricciones con **Huapi** como procesador de pagos entre personas.
 

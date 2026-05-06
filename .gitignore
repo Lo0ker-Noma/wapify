@@ -1,55 +1,48 @@
+
 # Dependencies
-node_modules/
-.pnp
-.pnp.js
-
-# Testing
-coverage/
-
-# Production
-build/
-dist/
-.next/
-out/
-
-# Misc
-.DS_Store
-*.pem
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+# IDE
 # Logs
+# Misc
+# OS
+# Optional eslint cache
+# Optional npm cache directory
+# Production
+# Testing
+# Yarn
+*.log
+*.pem
+*.swo
+*.swp
+*~
+.DS_Store
+.env
+.env*.local
+.env.development.local
+.env.local
+.env.production.local
+.env.test.local
+.eslintcache
+.idea/
+.next/
+.npm
+.pnp
+.pnp.*
+.pnp.js
+.pnpm-debug.log*
+.vercel
+.vim/
+.vscode/
+.yarn/build-state.yml
+.yarn/cache
+.yarn/install-state.gz
+.yarn/unplugged
+Thumbs.db
+build/
+coverage/
+dist/
+lerna-debug.log*
+node_modules/
 npm-debug.log*
+out/
 yarn-debug.log*
 yarn-error.log*
-lerna-debug.log*
-.pnpm-debug.log*
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.vim/
-
-# OS
-Thumbs.db
-.DS_Store
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Yarn
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
-.vercel

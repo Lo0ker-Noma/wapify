@@ -1,27 +1,23 @@
 {
   "name": "wapufy",
   "version": "0.1.0",
-  "description": "Shopify + Wapu = Wapufy. eCommerce platform for LATAM with integrated P2P payments",
   "private": true,
-  "author": "La Cripta Hackaton #3",
-  "license": "MIT",
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
   "scripts": {
-    "dev": "npm run dev --workspaces",
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces",
-    "format": "npm run format --workspaces"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [
-    "ecommerce",
-    "shopify",
-    "wapu",
-    "payments",
-    "latam",
-    "argentina"
-  ]
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "nostr-tools": "^2.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "typescript": "5.5.3"
+  }
 }

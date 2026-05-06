@@ -1,4 +1,4 @@
-# 🛍️ Wapify
+# 🛍️ Wapufy
 
 **Wapify** = Shopify + Wapu (Procesador de Pagos P2P)
 

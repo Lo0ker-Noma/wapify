@@ -1,4 +1,4 @@
-# 🚀 Pull Request - Wapify Hackaton
+# 🚀 Pull Request - Wapufy Hackaton
 
 ## Descripción
 <!-- Describe qué cambios hace este PR -->
@@ -60,5 +60,5 @@ Tarea completada:
 
 ---
 
-**Gracias por contribuir a Wapify! 💚**
+**Gracias por contribuir a Wapufy! 💚**
 

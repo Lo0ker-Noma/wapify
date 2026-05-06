@@ -1,12 +1,12 @@
-# 🚀 WAPIFY - LAUNCH READY
+# 🚀 WAPUFY - LAUNCH READY
 
 ## 🎯 Resumen Ejecutivo
 
-**Wapify** es una plataforma eCommerce minimalista diseñada para el **Hackaton #3 de La Cripta**, patrocinado por **Wapu** (procesador de pagos P2P argentino).
+**Wapufy** es una plataforma eCommerce minimalista diseñada para el **Hackaton #3 de La Cripta**, patrocinado por **Wapu** (procesador de pagos P2P argentino).
 
 ### La Idea Core
 ```
-Shopify + Wapu = Wapify
+Shopify + Wapu = Wapufy
 (eCommerce barato + pagos sin intermediarios para LATAM)
 ```
 
@@ -49,7 +49,7 @@ package.json             → Monorepo setup
 Signup → OAuth Wapu → Setup tienda (nombre, logo) → Agregar productos
 ```
 **Tiempo**: 5 minutos
-**Resultado**: Tienda pública en wapify.io/@sutienda
+**Resultado**: Tienda pública en wapufy.io/@sutienda
 
 ### 2️⃣ CLIENTE (Compra)
 ```
@@ -99,7 +99,7 @@ Wapu paga → Envía webhook → Backend actualiza → Marca completada → Emai
 
 ## 🏆 Diferenciales vs Shopify
 
-| Feature | Shopify | Wapify |
+| Feature | Shopify | Wapufy |
 |---------|---------|--------|
 | **Setup Time** | 20+ min | < 5 min |
 | **Pricing** | $29/mes | Free (+ pagos) |
@@ -306,10 +306,10 @@ const { data } = supabase
 
 ---
 
-## ✨ Qué Hace a Wapify Especial
+## ✨ Qué Hace a Wapufy Especial
 
 ### 1. Integración Nativa
-No es "Shopify + Wapu". Es **"Wapify CON Wapu"** - integrado desde el core.
+No es "Shopify + Wapu". Es **"Wapufy CON Wapu"** - integrado desde el core.
 
 ### 2. Velocidad
 Setup en minutos, no horas. Perfecto para vendedores que quieren empezar YA.
@@ -332,7 +332,7 @@ Pago directo sin intermediarios. Cliente → Vendedor vía Wapu.
 ```bash
 # 1. Clone
 git clone <repo>
-cd 04_Wapify
+cd 04_Wapufy
 
 # 2. Setup
 npm install
@@ -409,10 +409,10 @@ Si al final hay tiempo extra, ideas para stretch goals:
 ```
   ╔═══════════════════════════════════╗
   ║                                   ║
-  ║   WAPIFY HACKATON #3              ║
+  ║   WAPUFY HACKATON #3              ║
   ║   PROYECTO LANZADO ✓              ║
   ║                                   ║
-  ║   Shopify + Wapu = Wapify        ║
+  ║   Shopify + Wapu = Wapufy        ║
   ║                                   ║
   ║   Ahora:                          ║
   ║   → Code                          ║

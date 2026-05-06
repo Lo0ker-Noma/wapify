@@ -4,7 +4,7 @@ export default function HomePage() {
   return (
     <main className="container">
       <span className="badge">⚡ La Cripta Commerce Hackaton 2026</span>
-      <h1>Wapify</h1>
+      <h1>Wapufy</h1>
       <p className="muted" style={{ fontSize: "1.15rem", maxWidth: 640 }}>
         Un clon de Shopify pensado para LATAM: catálogo, carrito, checkout y
         órdenes, con pagos P2P integrados via <strong>Wapu</strong> y login

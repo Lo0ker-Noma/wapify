@@ -1,4 +1,4 @@
-# 📊 Wapify - Project Status Board
+# 📊 Wapufy - Project Status Board
 
 ## 🎯 Hackaton Overview
 
@@ -7,7 +7,7 @@
 | **Hackaton** | La Cripta #3 eCommerce |
 | **Tema** | eCommerce + Pagos |
 | **Patrocinador** | Wapu (Argentina P2P) |
-| **Idea** | Shopify + Wapu = Wapify |
+| **Idea** | Shopify + Wapu = Wapufy |
 | **Objetivo** | Setup rápido + pagos baratos |
 | **Timeline** | 10 horas intensas |
 | **Status** | 🟢 Iniciado |
@@ -17,7 +17,7 @@
 ## ✅ Checklist de Setup
 
 ### Iniciación (COMPLETADO ✓)
-- [x] Crear carpeta 04_Wapify
+- [x] Crear carpeta 04_Wapufy
 - [x] README.md con overview
 - [x] IDEA.md con plan detallado
 - [x] ARCHITECTURE.md con tech decisions
@@ -41,7 +41,7 @@
 ## 📁 Estructura Creada
 
 ```
-04_Wapify/
+04_Wapufy/
 ├── 📄 README.md              ✓ Overview + features
 ├── 💡 IDEA.md               ✓ Plan detallado
 ├── 🏗️ ARCHITECTURE.md        ✓ Tech decisions
@@ -252,7 +252,7 @@ npm run db:migrate
 
 ---
 
-## 🎉 Let's Build Wapify!
+## 🎉 Let's Build Wapufy!
 
 Estamos listos. El proyecto está estructurado, documentado y set up.
 

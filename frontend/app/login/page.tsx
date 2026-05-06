@@ -44,10 +44,10 @@ export default function LoginPage() {
         kind: 22242,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
-          ["relay", "wapify.app"],
-          ["challenge", `wapify-login-${Date.now()}`],
+          ["relay", "wapufy.app"],
+          ["challenge", `wapufy-login-${Date.now()}`],
         ],
-        content: "Wapify login",
+        content: "Wapufy login",
       });
       // TODO: POST challenge → /api/auth/nostr/verify para obtener cookie de sesión
       console.log("Signed challenge", challenge);
@@ -63,7 +63,7 @@ export default function LoginPage() {
     <main className="container">
       <h1>Login</h1>
       <p className="muted">
-        Wapify usa <strong>Nostr (NIP-07)</strong>. Tu npub es tu identidad —
+        Wapufy usa <strong>Nostr (NIP-07)</strong>. Tu npub es tu identidad —
         nada de emails ni contraseñas.
       </p>
 
@@ -73,7 +73,7 @@ export default function LoginPage() {
             <h3 style={{ marginTop: 0 }}>Conectar extensión Nostr</h3>
             <p className="muted">
               Necesitas una extensión NIP-07 instalada (Alby, nos2x, Flamingo).
-              Wapify pedirá tu pubkey y una firma de challenge.
+              Wapufy pedirá tu pubkey y una firma de challenge.
             </p>
             <button onClick={handleNostrLogin} disabled={loading}>
               {loading ? "Esperando firma…" : "Login con Nostr"}

@@ -1,4 +1,4 @@
-# 🔧 Wapify Backend
+# 🔧 Wapufy Backend
 
 Node.js + Express + Supabase + Wapu API
 

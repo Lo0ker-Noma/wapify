@@ -1,6 +1,6 @@
-# 🤝 Guía de Contribución - Wapify Hackaton
+# 🤝 Guía de Contribución - Wapufy Hackaton
 
-¡Bienvenido al Wapify Hackaton #3! Esta guía te ayudará a configurar el desarrollo y contribuir rápidamente.
+¡Bienvenido al Wapufy Hackaton #3! Esta guía te ayudará a configurar el desarrollo y contribuir rápidamente.
 
 ## ⚡ Quick Start
 
@@ -14,7 +14,7 @@
 ```bash
 # 1. Clone repo
 git clone <repo-url>
-cd 04_Wapify
+cd 04_Wapufy
 
 # 2. Frontend Setup
 cd frontend
@@ -240,4 +240,4 @@ El primero en hacer PR vale extra puntos en el hackaton! 🎉
 
 **Happy Coding! 💻**
 
-Hacé que Wapify sea increíble! 🚀
+Hacé que Wapufy sea increíble! 🚀

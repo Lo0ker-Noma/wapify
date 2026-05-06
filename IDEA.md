@@ -1,4 +1,4 @@
-# 💡 Plan Detallado: Wapify Hackaton #3
+# 💡 Plan Detallado: Wapufy Hackaton #3
 
 ## El Problema
 
@@ -7,7 +7,7 @@
 - **Wapu**: Excelente para pagos P2P pero sin tienda integrada
 - **Niche**: Vendedores argentinos/LATAM necesitan: setup rápido + pagos baratos + local
 
-## La Solución: Wapify
+## La Solución: Wapufy
 
 **"Shopify para LATAM con pagos Wapu"**
 
@@ -35,7 +35,7 @@ Configura tienda (nombre, logo, colores)
     ↓
 Agrega productos
     ↓
-Tienda lista en: wapify.io/@sutienda
+Tienda lista en: wapufy.io/@sutienda
     ↓
 Recibe notificación de compra
     ↓
@@ -59,7 +59,7 @@ Selecciona "Pagar con Wapu"
     ↓
 Redirige a Wapu (confirma pago)
     ↓
-Vuelve a Wapify (confirmación)
+Vuelve a Wapufy (confirmación)
     ↓
 Email de compra
 ```
@@ -71,9 +71,9 @@ Email de compra
 ```
 Wapu: Pago procesado
     ↓
-Envía webhook a Wapify
+Envía webhook a Wapufy
     ↓
-Wapify actualiza:
+Wapufy actualiza:
    - Marca orden como pagada
    - Resta stock
    - Envia email vendedor
@@ -115,7 +115,7 @@ POST   /webhooks/wapu             → Webhook pago (público)
 ### Frontend Pages
 
 ```
-/                    → Landing (info Wapify)
+/                    → Landing (info Wapufy)
 /login               → Login
 /register            → Registro
 /dashboard           → Panel vendedor
@@ -225,7 +225,7 @@ const response = await fetch('https://api.wapu.com.ar/v1/transactions/create', {
 ### 3. Webhook Confirmación
 
 ```javascript
-// POST a https://wapify.io/webhooks/wapu
+// POST a https://wapufy.io/webhooks/wapu
 // Wapu envía:
 {
   "event": "transaction.completed",
@@ -301,7 +301,7 @@ const response = await fetch('https://api.wapu.com.ar/v1/transactions/create', {
 
 ## 📝 Notas Finales
 
-**Por qué Wapify puede ser el ganador:**
+**Por qué Wapufy puede ser el ganador:**
 
 1. **Timing**: Wapu es nuevo, no hay integrados todavía → oportunidad
 2. **Mercado**: Vendedores LATAM necesitan alternativa a Shopify

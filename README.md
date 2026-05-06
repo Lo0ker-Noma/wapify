@@ -1,6 +1,6 @@
-# 🛍️ Wapify
+# 🛍️ Wapufy
 
-**Wapify** = Shopify + Wapu (Procesador de Pagos P2P Argentina)
+**Wapufy** = Shopify + Wapu (Procesador de Pagos P2P Argentina)
 
 Una plataforma eCommerce simplificada diseñada para el tercer hackaton de La Cripta, enfocada en integración sin fricciones con **Wapu** como procesador de pagos entre personas.
 
@@ -24,7 +24,7 @@ Un clon de los servicios y modelo operativo de Shopify, pero **rediseñado para 
 ## 🏗️ Estructura del Proyecto
 
 ```
-04_Wapify/
+04_Wapufy/
 ├── README.md              # Este archivo
 ├── IDEA.md               # Plan detallado del hackaton
 ├── backend/              # API (Node.js/Express)
@@ -74,7 +74,7 @@ Un clon de los servicios y modelo operativo de Shopify, pero **rediseñado para 
 ## 🤝 Wapu Integration
 
 ```
-[Cliente] → [Wapify Checkout] → [Wapu API] → [Banco]
+[Cliente] → [Wapufy Checkout] → [Wapu API] → [Banco]
                 ↓
         [Webhook Confirmación]
                 ↓
@@ -84,7 +84,7 @@ Un clon de los servicios y modelo operativo de Shopify, pero **rediseñado para 
 Flujo:
 1. Cliente selecciona productos
 2. Va a checkout
-3. Inicia pago con Wapu (sin salir de Wapify)
+3. Inicia pago con Wapu (sin salir de Wapufy)
 4. Wapu procesa el pago P2P
 5. Webhook confirma al vendedor
 
@@ -105,7 +105,7 @@ Flujo:
 ```bash
 # 1. Fork/Clone
 git clone <repo>
-cd 04_Wapify
+cd 04_Wapufy
 
 # 2. Setup local
 npm install
@@ -123,7 +123,7 @@ git push origin feature/tu-feature
 
 ## 🏆 Diferenciadores vs Shopify
 
-| Feature | Shopify | Wapify |
+| Feature | Shopify | Wapufy |
 |---------|---------|--------|
 | Setup | 20+ min | < 5 min |
 | Comisión | 2.2% + $0.30 | Transparente Wapu |

@@ -1,4 +1,4 @@
-# 🎨 Wapify Frontend
+# 🎨 Wapufy Frontend
 
 Next.js + React + Tailwind CSS
 

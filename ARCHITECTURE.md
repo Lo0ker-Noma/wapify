@@ -1,4 +1,4 @@
-# 🏗️ Wapify - Architecture Decision Record (ADR)
+# 🏗️ Wapufy - Architecture Decision Record (ADR)
 
 ## Tech Stack Decisions
 

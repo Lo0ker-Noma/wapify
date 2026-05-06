@@ -1,14 +1,14 @@
 # 🛍️ Wapify
 
-**Wapify** = Shopify + Huapi (Procesador de Pagos P2P Argentina)
+**Wapify** = Shopify + Wapi (Procesador de Pagos P2P)
 
 Una plataforma eCommerce simplificada diseñada para el tercer hackaton de La Cripta, enfocada en integración sin fricciones con **Huapi** como procesador de pagos entre personas.
 
 ## 📋 Hackaton Info
 - **Evento**: La Cripta Hackaton #3
 - **Tema**: eCommerce
-- **Patrocinador**: [Huapi](https://huapi.com.ar/) - Procesador de pagos P2P Argentina
-- **Objetivo**: Crear una plataforma de ventas rápida y con integración nativa de Huapi
+- **Patrocinador**: [Wapi](https://my.wapu.app/) - Procesador de pagos P2P Argentina
+- **Objetivo**: Crear una plataforma de ventas rápida y con integración nativa de Wapi
 
 ## 🎯 Propuesta
 

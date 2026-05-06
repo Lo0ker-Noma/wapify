@@ -7,7 +7,7 @@
 ### Requisitos
 - Node.js 18+
 - Git
-- Credenciales de Huapi (pídelas en #hackaton)
+- Credenciales de Wapu (pídelas en #hackaton)
 
 ### Setup Local
 
@@ -41,10 +41,10 @@ npm run dev
 
 - [ ] Setup Express + Supabase
 - [ ] Auth endpoints (register, login, logout)
-- [ ] Huapi OAuth flow
+- [ ] Wapu OAuth flow
 - [ ] CRUD Products
 - [ ] CRUD Orders
-- [ ] Pago con Huapi API
+- [ ] Pago con Wapu API
 - [ ] Webhook de confirmación
 - [ ] Email notifications
 

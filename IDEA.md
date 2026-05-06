@@ -4,16 +4,16 @@
 
 - **Shopify**: Caro ($29-299/mes), lento de setup, enfocado en mundo anglosajón
 - **Mercado Libre/Tiendanube**: Generan comisiones altas
-- **Huapi**: Excelente para pagos P2P pero sin tienda integrada
+- **Wapu**: Excelente para pagos P2P pero sin tienda integrada
 - **Niche**: Vendedores argentinos/LATAM necesitan: setup rápido + pagos baratos + local
 
 ## La Solución: Wapify
 
-**"Shopify para LATAM con pagos Huapi"**
+**"Shopify para LATAM con pagos Wapu"**
 
 Plataforma eCommerce minimalista que:
-1. Se setea en 5 minutos (conexión OAuth Huapi)
-2. Cero comisiones de plataforma (solo pagas Huapi)
+1. Se setea en 5 minutos (conexión OAuth Wapu)
+2. Cero comisiones de plataforma (solo pagas Wapu)
 3. Pago integrado directo en la tienda
 4. Dashboard intuitivo para vendedor
 5. Optimizado para mobile (mayoría de compras en LATAM)
@@ -29,7 +29,7 @@ Vendedor Nuevo
     ↓
 Crea Cuenta (email + contraseña)
     ↓
-Autentica con Huapi (OAuth)
+Autentica con Wapu (OAuth)
     ↓
 Configura tienda (nombre, logo, colores)
     ↓
@@ -42,7 +42,7 @@ Recibe notificación de compra
 Dashboard: Ver órdenes + reportes
 ```
 
-**Impacto del hackaton**: Crear account + Huapi auth + Setup tienda
+**Impacto del hackaton**: Crear account + Wapu auth + Setup tienda
 
 ### 2️⃣ FLUJO CLIENTE
 
@@ -55,21 +55,21 @@ Agrega al carrito
     ↓
 Checkout: nombre, email, cantidad
     ↓
-Selecciona "Pagar con Huapi"
+Selecciona "Pagar con Wapu"
     ↓
-Redirige a Huapi (confirma pago)
+Redirige a Wapu (confirma pago)
     ↓
 Vuelve a Wapify (confirmación)
     ↓
 Email de compra
 ```
 
-**Impacto del hackaton**: Producto → Carrito → Checkout Huapi
+**Impacto del hackaton**: Producto → Carrito → Checkout Wapu
 
 ### 3️⃣ FLUJO WEBHOOK
 
 ```
-Huapi: Pago procesado
+Wapu: Pago procesado
     ↓
 Envía webhook a Wapify
     ↓
@@ -92,7 +92,7 @@ Vendedor ve en dashboard
 
 ```
 POST   /api/auth/register          → Crear cuenta
-POST   /api/auth/huapi-login       → OAuth Huapi
+POST   /api/auth/wapu-login       → OAuth Wapu
 GET    /api/auth/me                → User actual
 
 POST   /api/stores                 → Crear tienda
@@ -106,10 +106,10 @@ DELETE /api/products/:id           → Eliminar
 
 POST   /api/orders                 → Crear orden
 GET    /api/orders                 → Mis órdenes
-POST   /api/orders/:id/pay         → Iniciar pago Huapi
+POST   /api/orders/:id/pay         → Iniciar pago Wapu
 GET    /api/orders/:id             → Detalle orden
 
-POST   /webhooks/huapi             → Webhook pago (público)
+POST   /webhooks/wapu             → Webhook pago (público)
 ```
 
 ### Frontend Pages
@@ -134,13 +134,13 @@ POST   /webhooks/huapi             → Webhook pago (público)
 users (id, email, password_hash, created_at)
 
 -- Stores
-stores (id, user_id, name, slug, logo_url, colors, huapi_account_id)
+stores (id, user_id, name, slug, logo_url, colors, wapu_account_id)
 
 -- Products
 products (id, store_id, name, price, image_url, stock, created_at)
 
 -- Orders
-orders (id, store_id, customer_email, customer_name, total, status, huapi_transaction_id, created_at)
+orders (id, store_id, customer_email, customer_name, total, status, wapu_transaction_id, created_at)
 
 -- Order Items
 order_items (id, order_id, product_id, quantity, price)
@@ -153,14 +153,14 @@ order_items (id, order_id, product_id, quantity, price)
 ### Hora 0-1: Setup
 - [ ] Crear repos (backend + frontend)
 - [ ] Configurar Supabase
-- [ ] Credenciales Huapi
+- [ ] Credenciales Wapu
 - [ ] CI/CD básico
 
 ### Hora 1-4: Backend API
 - [ ] Auth (register, login, session)
 - [ ] Crud de Products
 - [ ] Crud de Orders
-- [ ] Integración Huapi (iniciar pago)
+- [ ] Integración Wapu (iniciar pago)
 - [ ] Webhook de confirmación
 
 ### Hora 4-7: Frontend
@@ -168,7 +168,7 @@ order_items (id, order_id, product_id, quantity, price)
 - [ ] Dashboard vendedor (products)
 - [ ] Store pública (ver productos)
 - [ ] Carrito simple
-- [ ] Checkout & pago Huapi
+- [ ] Checkout & pago Wapu
 
 ### Hora 7-9: Polish
 - [ ] Emails de confirmación
@@ -184,18 +184,18 @@ order_items (id, order_id, product_id, quantity, price)
 
 ---
 
-## 🔗 Integración Huapi (Detalles)
+## 🔗 Integración Wapu (Detalles)
 
 ### 1. OAuth Login
 
 ```javascript
-// Frontend redirige a Huapi
-window.location.href = `https://huapi.com.ar/oauth/authorize?
-  client_id=${HUAPI_CLIENT_ID}
+// Frontend redirige a Wapu
+window.location.href = `https://wapu.com.ar/oauth/authorize?
+  client_id=${WAPU_CLIENT_ID}
   &redirect_uri=${REDIRECT_URI}
   &scope=payments`;
 
-// Backend recibe callback en /auth/huapi-callback
+// Backend recibe callback en /auth/wapu-callback
 // Intercambia code por access_token
 // Guarda en BD + crea sesión
 ```
@@ -204,10 +204,10 @@ window.location.href = `https://huapi.com.ar/oauth/authorize?
 
 ```javascript
 // Cliente hace POST /api/orders/:id/pay
-const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', {
+const response = await fetch('https://api.wapu.com.ar/v1/transactions/create', {
   method: 'POST',
   headers: {
-    'Authorization': `Bearer ${vendedor.huapi_token}`,
+    'Authorization': `Bearer ${vendedor.wapu_token}`,
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
@@ -218,15 +218,15 @@ const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', 
   })
 });
 
-// Huapi devuelve { transaction_id, redirect_url }
-// Redirige cliente a redirect_url (Huapi pago)
+// Wapu devuelve { transaction_id, redirect_url }
+// Redirige cliente a redirect_url (Wapu pago)
 ```
 
 ### 3. Webhook Confirmación
 
 ```javascript
-// POST a https://wapify.io/webhooks/huapi
-// Huapi envía:
+// POST a https://wapify.io/webhooks/wapu
+// Wapu envía:
 {
   "event": "transaction.completed",
   "transaction_id": "txn_123",
@@ -236,7 +236,7 @@ const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', 
 }
 
 // Backend:
-1. Valida firma de Huapi
+1. Valida firma de Wapu
 2. Busca orden por order_id
 3. Marca como pagada
 4. Actualiza stock
@@ -248,7 +248,7 @@ const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', 
 ## 🎨 Diferenciadores de Diseño
 
 ### Para Vendedor
-- **Onboarding**: 3 pasos (signup, Huapi, primer producto)
+- **Onboarding**: 3 pasos (signup, Wapu, primer producto)
 - **Dashboard**: Cards grandes, números destacados (ventas hoy, órdenes pendientes)
 - **Productos**: Upload foto, precio, stock. Simple.
 - **Órdenes**: Timeline visual de estados, botón "marcar enviado"
@@ -257,7 +257,7 @@ const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', 
 - **Tienda**: Grid limpio de productos, busca por nombre
 - **Producto**: Foto grande, descripción, rating simple
 - **Carrito**: Cantidades, total clara, botón "Pagar"
-- **Checkout**: Form simple + botón "Pagar con Huapi"
+- **Checkout**: Form simple + botón "Pagar con Wapu"
 - **Confirmación**: "Tu pago está procesándose, te enviaremos email"
 
 ---
@@ -275,7 +275,7 @@ const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', 
 ## 🔒 Security Checklist
 
 - [ ] HTTPS en todo
-- [ ] Validación de webhook Huapi (signature)
+- [ ] Validación de webhook Wapu (signature)
 - [ ] Rate limiting en checkout
 - [ ] Sanitización de inputs
 - [ ] No guardar datos sensibles (tarjetas)
@@ -289,12 +289,12 @@ const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', 
 **Técnico:**
 - Integración OAuth con API externa
 - Webhooks y eventos
-- Manejo de pagos (sin PCI compliance porque Huapi lo maneja)
+- Manejo de pagos (sin PCI compliance porque Wapu lo maneja)
 - Full-stack rápido (backend + frontend)
 
 **Negocio:**
 - Problema LATAM real (eCommerce barato)
-- Mercado de nicho (vendedores, Huapi integration)
+- Mercado de nicho (vendedores, Wapu integration)
 - MVP viable en 10 horas
 
 ---
@@ -303,7 +303,7 @@ const response = await fetch('https://api.huapi.com.ar/v1/transactions/create', 
 
 **Por qué Wapify puede ser el ganador:**
 
-1. **Timing**: Huapi es nuevo, no hay integrados todavía → oportunidad
+1. **Timing**: Wapu es nuevo, no hay integrados todavía → oportunidad
 2. **Mercado**: Vendedores LATAM necesitan alternativa a Shopify
 3. **Diferenciador**: Pago integrado directo (sin middleman)
 4. **Scope**: Manejable para hackaton (no es Shopify full)

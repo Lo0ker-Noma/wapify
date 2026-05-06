@@ -38,7 +38,7 @@ frontend/
 
 Ver `.env.example` para variables requeridas:
 - NEXT_PUBLIC_API_URL
-- HUAPI_CLIENT_ID
+- WAPU_CLIENT_ID
 - NEXTAUTH_URL (auth config)
 
 ## TODO (Hackaton)
@@ -48,7 +48,7 @@ Ver `.env.example` para variables requeridas:
 - [ ] Dashboard layout
 - [ ] Products CRUD
 - [ ] Shopping cart
-- [ ] Checkout with Huapi
+- [ ] Checkout with Wapu
 - [ ] Order confirmation
 
 ---

@@ -20,7 +20,7 @@
 **Why?**
 - Código compartido con frontend (TypeScript)
 - Bajo learning curve
-- Huapi API es REST (natural con Express)
+- Wapu API es REST (natural con Express)
 - Fácil webhooks
 
 **Alternatives considered:**
@@ -34,7 +34,7 @@
 - PostgreSQL poder
 - Real-time subscriptions
 - Auth integrado (pero usamos NextAuth)
-- Webhooks para Huapi sync
+- Webhooks para Wapu sync
 - SQL migrations fáciles
 
 **Alternatives considered:**
@@ -44,7 +44,7 @@
 ### Auth: NextAuth.js
 
 **Why?**
-- OAuth con Huapi
+- OAuth con Wapu
 - Session management
 - JWT + database sessions
 - Next.js first-class support
@@ -53,17 +53,17 @@
 - Auth0 (costo)
 - Firebase Auth (lock-in)
 
-### Payment: Huapi API + Webhooks
+### Payment: Wapu API + Webhooks
 
 **Why?**
 - Sponsor del hackaton
 - Integración P2P nativa
-- No PCI compliance (Huapi maneja)
+- No PCI compliance (Wapu maneja)
 - Webhook confirmación
 
 **Flow:**
 ```
-Frontend → Backend /orders/:id/pay → Huapi API
+Frontend → Backend /orders/:id/pay → Wapu API
                                         ↓
                                    Redirige cliente
                                         ↓
@@ -79,7 +79,7 @@ Frontend → Backend /orders/:id/pay → Huapi API
 **Frontend**: Vercel (auto-deploy main)
 **Backend**: Railway/Heroku (auto-deploy main)
 **Database**: Supabase cloud (free tier)
-**Webhooks**: Stable URL para Huapi
+**Webhooks**: Stable URL para Wapu
 
 ---
 
@@ -105,7 +105,7 @@ CREATE TABLE stores (
   slug VARCHAR UNIQUE NOT NULL,
   logo_url VARCHAR,
   colors JSONB DEFAULT '{"primary": "#000"}',
-  huapi_account_id VARCHAR, -- De OAuth Huapi
+  wapu_account_id VARCHAR, -- De OAuth Wapu
   created_at TIMESTAMP DEFAULT NOW()
 );
 ```
@@ -134,7 +134,7 @@ CREATE TABLE orders (
   customer_name VARCHAR NOT NULL,
   total DECIMAL(10,2) NOT NULL,
   status VARCHAR DEFAULT 'pending', -- pending, processing, completed, failed
-  huapi_transaction_id VARCHAR UNIQUE,
+  wapu_transaction_id VARCHAR UNIQUE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -199,16 +199,16 @@ interface ApiResponse<T> {
 
 ---
 
-## Huapi Integration
+## Wapu Integration
 
 ### OAuth Flow (Auth)
 
 ```
-1. Frontend: GET /api/auth/login → redirige a Huapi OAuth
-2. Huapi: User autentica
-3. Huapi: Redirige a /api/auth/huapi-callback?code=xxx
+1. Frontend: GET /api/auth/login → redirige a Wapu OAuth
+2. Wapu: User autentica
+3. Wapu: Redirige a /api/auth/wapu-callback?code=xxx
 4. Backend: Intercambia code por access_token
-5. Backend: Guarda token en user.huapi_token
+5. Backend: Guarda token en user.wapu_token
 6. Backend: Crea sesión
 7. Frontend: Redirige a /dashboard
 ```
@@ -217,12 +217,12 @@ interface ApiResponse<T> {
 
 ```
 1. Frontend: POST /api/orders/:id/pay
-2. Backend: Llama Huapi API con amount
-3. Huapi: Devuelve { transaction_id, redirect_url }
+2. Backend: Llama Wapu API con amount
+3. Wapu: Devuelve { transaction_id, redirect_url }
 4. Frontend: Redirige cliente a redirect_url
-5. Cliente: Paga en Huapi
-6. Huapi: Redirige a /orders/:id/confirmation
-7. Backend: Webhook POST /webhooks/huapi
+5. Cliente: Paga en Wapu
+6. Wapu: Redirige a /orders/:id/confirmation
+7. Backend: Webhook POST /webhooks/wapu
 8. Backend: Marca order como pagada
 9. Frontend: Muestra confirmación
 ```
@@ -230,11 +230,11 @@ interface ApiResponse<T> {
 ### Webhook Signature Verification
 
 ```typescript
-// Huapi envía X-Signature header
+// Wapu envía X-Signature header
 // Backend valida:
 const signature = req.headers['x-signature'];
 const payload = req.body;
-const hash = hmac_sha256(payload + HUAPI_WEBHOOK_SECRET);
+const hash = hmac_sha256(payload + WAPU_WEBHOOK_SECRET);
 // Comparar hash === signature
 ```
 
@@ -283,10 +283,10 @@ No Redux/Zustand (MVP simple)
 | Hora | Tarea | Owner |
 |------|-------|-------|
 | 0-1 | Setup repos, DB, env | DevOps |
-| 1-3 | Auth API + Huapi OAuth | Backend |
+| 1-3 | Auth API + Wapu OAuth | Backend |
 | 3-5 | Products + Orders API | Backend |
 | 5-7 | Frontend pages + Forms | Frontend |
-| 7-8 | Integración Huapi payment | Full-stack |
+| 7-8 | Integración Wapu payment | Full-stack |
 | 8-9 | Testing + Polishing | QA |
 | 9-10 | Deploy + Demo | DevOps |
 
@@ -321,16 +321,16 @@ No Redux/Zustand (MVP simple)
 ### Autorización
 - ✅ Middleware checkea user_id === store owner
 - ✅ No acceso a órdenes de otro vendedor
-- ✅ Webhook validación de Huapi
+- ✅ Webhook validación de Wapu
 
 ### Data Protection
-- ✅ No guardar tarjetas (Huapi maneja)
+- ✅ No guardar tarjetas (Wapu maneja)
 - ✅ CORS configurado correctamente
 - ✅ Rate limiting en endpoints sensibles
 - ✅ SQL injection prevention (Supabase parameterized queries)
 
 ### Secrets
-- ✅ Huapi API keys en .env (nunca expose)
+- ✅ Wapu API keys en .env (nunca expose)
 - ✅ NextAuth secret fuerte
 - ✅ HTTPS only cookies
 

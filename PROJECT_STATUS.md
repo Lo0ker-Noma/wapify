@@ -6,8 +6,8 @@
 |-----------|-------|
 | **Hackaton** | La Cripta #3 eCommerce |
 | **Tema** | eCommerce + Pagos |
-| **Patrocinador** | Huapi (Argentina P2P) |
-| **Idea** | Shopify + Huapi = Wapify |
+| **Patrocinador** | Wapu (Argentina P2P) |
+| **Idea** | Shopify + Wapu = Wapify |
 | **Objetivo** | Setup rápido + pagos baratos |
 | **Timeline** | 10 horas intensas |
 | **Status** | 🟢 Iniciado |
@@ -32,7 +32,7 @@
 ### A Hacer (NEXT)
 - [ ] Configurar base de datos Supabase
 - [ ] Crear repos en GitHub
-- [ ] Configurar Huapi credenciales
+- [ ] Configurar Wapu credenciales
 - [ ] Setup CI/CD (GitHub Actions)
 - [ ] Crear proyecto en Linear/Kanban
 
@@ -79,7 +79,7 @@
 - [ ] Express server setup
 - [ ] Supabase connection
 - [ ] Auth system (login/register)
-- [ ] Huapi OAuth integration
+- [ ] Wapu OAuth integration
 - [ ] Products CRUD
 - [ ] Orders CRUD
 - [ ] Payment init endpoint
@@ -104,8 +104,8 @@
 - [ ] Migrations ready
 
 ### Integrations
-- [ ] Huapi OAuth callback
-- [ ] Huapi payment flow
+- [ ] Wapu OAuth callback
+- [ ] Wapu payment flow
 - [ ] Webhook validation
 - [ ] Email sending
 
@@ -115,17 +115,17 @@
 
 ### 1. Flujo Vendedor
 ```
-SIGNUP → OAUTH HUAPI → SETUP TIENDA → AGREGAR PRODUCTOS
+SIGNUP → OAUTH WAPU → SETUP TIENDA → AGREGAR PRODUCTOS
 ```
 
 ### 2. Flujo Cliente  
 ```
-BROWSE → CART → CHECKOUT → HUAPI PAYMENT → CONFIRMATION
+BROWSE → CART → CHECKOUT → WAPU PAYMENT → CONFIRMATION
 ```
 
 ### 3. Flujo Webhook
 ```
-HUAPI PAGA → WEBHOOK → BD UPDATE → EMAIL NOTIF
+WAPU PAGA → WEBHOOK → BD UPDATE → EMAIL NOTIF
 ```
 
 ---
@@ -137,8 +137,8 @@ HUAPI PAGA → WEBHOOK → BD UPDATE → EMAIL NOTIF
 | Frontend | Next.js 14, React, Tailwind | 📋 Listo |
 | Backend | Node.js, Express, TypeScript | 📋 Listo |
 | Database | Supabase (PostgreSQL) | 🔧 Setup needed |
-| Auth | NextAuth.js + Huapi OAuth | 📋 Listo |
-| Payments | Huapi API + Webhooks | 📋 Listo |
+| Auth | NextAuth.js + Wapu OAuth | 📋 Listo |
+| Payments | Wapu API + Webhooks | 📋 Listo |
 | Hosting | Vercel (FE) + Railway (BE) | 🔧 Setup needed |
 
 ---
@@ -146,7 +146,7 @@ HUAPI PAGA → WEBHOOK → BD UPDATE → EMAIL NOTIF
 ## 🔗 Important Links
 
 - **La Cripta**: https://lacrypta.dev/
-- **Huapi Docs**: https://docs.huapi.com.ar/
+- **Wapu Docs**: https://docs.wapu.com.ar/
 - **Next.js**: https://nextjs.org/
 - **Express**: https://expressjs.com/
 - **Supabase**: https://supabase.com/
@@ -160,7 +160,7 @@ HUAPI PAGA → WEBHOOK → BD UPDATE → EMAIL NOTIF
 HORA    TAREA                           ESTADO
 ─────────────────────────────────────────────────
 0-1     Setup repos & credenciales      📋 (Next)
-1-3     Backend auth + Huapi            🔧
+1-3     Backend auth + Wapu            🔧
 3-5     Backend products & orders       🔧
 5-7     Frontend pages & forms          🔧
 7-8     Integración payment             🔧
@@ -210,7 +210,7 @@ npm run db:migrate
 
 | Rol | Tareas | Personas |
 |-----|--------|----------|
-| **Backend Lead** | Auth, Huapi, DB | ? |
+| **Backend Lead** | Auth, Wapu, DB | ? |
 | **Frontend Lead** | UI, Cart, Checkout | ? |
 | **DevOps** | DB, Deploy, Infra | ? |
 | **QA/Testing** | Testing, Edge cases | ? |
@@ -222,14 +222,14 @@ npm run db:migrate
 ### Inmediatos (Antes de Empezar)
 1. [ ] Fork/Clone repos
 2. [ ] Setup Supabase project
-3. [ ] Obtener credenciales Huapi
+3. [ ] Obtener credenciales Wapu
 4. [ ] Instalar dependencias
 5. [ ] Configurar .env.local
 
 ### Durante Hackaton
 1. [ ] Implementar backend auth
 2. [ ] Crear frontend pages
-3. [ ] Integrar Huapi
+3. [ ] Integrar Wapu
 4. [ ] Testing completo
 5. [ ] Deploy
 6. [ ] Demo + PR

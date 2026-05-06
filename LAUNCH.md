@@ -2,11 +2,11 @@
 
 ## 🎯 Resumen Ejecutivo
 
-**Wapify** es una plataforma eCommerce minimalista diseñada para el **Hackaton #3 de La Cripta**, patrocinado por **Huapi** (procesador de pagos P2P argentino).
+**Wapify** es una plataforma eCommerce minimalista diseñada para el **Hackaton #3 de La Cripta**, patrocinado por **Wapu** (procesador de pagos P2P argentino).
 
 ### La Idea Core
 ```
-Shopify + Huapi = Wapify
+Shopify + Wapu = Wapify
 (eCommerce barato + pagos sin intermediarios para LATAM)
 ```
 
@@ -46,21 +46,21 @@ package.json             → Monorepo setup
 
 ### 1️⃣ VENDEDOR (Onboarding)
 ```
-Signup → OAuth Huapi → Setup tienda (nombre, logo) → Agregar productos
+Signup → OAuth Wapu → Setup tienda (nombre, logo) → Agregar productos
 ```
 **Tiempo**: 5 minutos
 **Resultado**: Tienda pública en wapify.io/@sutienda
 
 ### 2️⃣ CLIENTE (Compra)
 ```
-Explora productos → Agrega carrito → Checkout → Paga con Huapi → Confirmación
+Explora productos → Agrega carrito → Checkout → Paga con Wapu → Confirmación
 ```
 **Tiempo**: 2 minutos
 **Resultado**: Email de orden recibida
 
 ### 3️⃣ WEBHOOK (Confirmación)
 ```
-Huapi paga → Envía webhook → Backend actualiza → Marca completada → Email vendedor
+Wapu paga → Envía webhook → Backend actualiza → Marca completada → Email vendedor
 ```
 **Tiempo**: <1 segundo
 **Resultado**: Vendedor notificado en dashboard
@@ -73,7 +73,7 @@ Huapi paga → Envía webhook → Backend actualiza → Marca completada → Ema
 ```
 ✓ Estructura lista
 → 8 endpoints de API
-→ Integración Huapi OAuth
+→ Integración Wapu OAuth
 → Webhook handler
 → Email notifications
 ```
@@ -103,7 +103,7 @@ Huapi paga → Envía webhook → Backend actualiza → Marca completada → Ema
 |---------|---------|--------|
 | **Setup Time** | 20+ min | < 5 min |
 | **Pricing** | $29/mes | Free (+ pagos) |
-| **Pagos** | 2.2% + $0.30 | Huapi directo |
+| **Pagos** | 2.2% + $0.30 | Wapu directo |
 | **Para LATAM** | ❌ | ✅ |
 | **P2P Nativo** | ❌ | ✅ |
 | **Integración** | Con plugins | Integrado |
@@ -114,7 +114,7 @@ Huapi paga → Envía webhook → Backend actualiza → Marca completada → Ema
 
 ### Raíz
 ```
-.env.example              ← Template con Huapi, Supabase, NextAuth vars
+.env.example              ← Template con Wapu, Supabase, NextAuth vars
 .gitignore               ← Node.js + sensibles
 .github/
   └─ pull_request_template.md  ← Para PRs limpios del hackaton
@@ -156,7 +156,7 @@ backend/
 ## 🔐 Seguridad & Best Practices
 
 - ✅ NextAuth.js para autenticación
-- ✅ OAuth Huapi (no contraseñas simples)
+- ✅ OAuth Wapu (no contraseñas simples)
 - ✅ Webhook signature validation
 - ✅ HTTPS en producción
 - ✅ Environment variables en .env
@@ -209,10 +209,10 @@ git push origin feature/nombre
 # Abrir PR
 ```
 
-### 3. Testing Local Huapi
+### 3. Testing Local Wapu
 ```bash
-# Usar Huapi sandbox
-HUAPI_ENV=sandbox npm run dev
+# Usar Wapu sandbox
+WAPU_ENV=sandbox npm run dev
 ```
 
 ### 4. Dashboard Real-time
@@ -230,10 +230,10 @@ const { data } = supabase
 
 ```
 ✓ Setup (1h)
-  → Repos, DB, Huapi creds
+  → Repos, DB, Wapu creds
 
 → Auth Backend (2h)
-  → Login/Register + Huapi OAuth
+  → Login/Register + Wapu OAuth
 
 → API Endpoints (2h)
   → Products, Orders, Payment
@@ -242,7 +242,7 @@ const { data } = supabase
   → Pages, Forms, Cart
 
 → Integración (1h)
-  → Huapi callback + Webhook
+  → Wapu callback + Webhook
 
 → Testing (1h)
   → E2E testing, edge cases
@@ -309,19 +309,19 @@ const { data } = supabase
 ## ✨ Qué Hace a Wapify Especial
 
 ### 1. Integración Nativa
-No es "Shopify + Huapi". Es **"Wapify CON Huapi"** - integrado desde el core.
+No es "Shopify + Wapu". Es **"Wapify CON Wapu"** - integrado desde el core.
 
 ### 2. Velocidad
 Setup en minutos, no horas. Perfecto para vendedores que quieren empezar YA.
 
 ### 3. Costo
-Sin comisiones de plataforma. Solo pagas lo que Huapi cobra.
+Sin comisiones de plataforma. Solo pagas lo que Wapu cobra.
 
 ### 4. LATAM First
 No es un producto global adaptado. Es para Argentina/LATAM desde el inicio.
 
 ### 5. P2P Native
-Pago directo sin intermediarios. Cliente → Vendedor vía Huapi.
+Pago directo sin intermediarios. Cliente → Vendedor vía Wapu.
 
 ---
 
@@ -339,7 +339,7 @@ npm install
 
 # 3. Config (pedir a admin)
 cp .env.example .env.local
-# Editar con credenciales Huapi + Supabase
+# Editar con credenciales Wapu + Supabase
 
 # 4. Dev
 npm run dev
@@ -358,7 +358,7 @@ git push origin feature/tu-feature
 | Hora | Dev | QA | Ops |
 |------|-----|----|----|
 | 0-1 | Setup | Setup | Repos + DB |
-| 1-3 | Backend auth | - | Huapi creds |
+| 1-3 | Backend auth | - | Wapu creds |
 | 3-5 | Backend API | Testing | Monitor |
 | 5-7 | Frontend | Testing | Deploy prep |
 | 7-8 | Integración | Testing | Webhooks |
@@ -386,7 +386,7 @@ Si al final hay tiempo extra, ideas para stretch goals:
 - [Next.js Docs](https://nextjs.org/docs)
 - [Express Docs](https://expressjs.com/)
 - [Supabase Guide](https://supabase.com/docs)
-- [Huapi Docs](https://docs.huapi.com.ar/)
+- [Wapu Docs](https://docs.wapu.com.ar/)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 
 ---
@@ -394,7 +394,7 @@ Si al final hay tiempo extra, ideas para stretch goals:
 ## 🙏 Credits
 
 **Hackaton**: La Cripta #3
-**Sponsor**: Huapi (Argentina)
+**Sponsor**: Wapu (Argentina)
 **Theme**: eCommerce
 **Location**: Remote (La Cripta Discord)
 
@@ -412,7 +412,7 @@ Si al final hay tiempo extra, ideas para stretch goals:
   ║   WAPIFY HACKATON #3              ║
   ║   PROYECTO LANZADO ✓              ║
   ║                                   ║
-  ║   Shopify + Huapi = Wapify        ║
+  ║   Shopify + Wapu = Wapify        ║
   ║                                   ║
   ║   Ahora:                          ║
   ║   → Code                          ║

@@ -1,6 +1,6 @@
 # 🔧 Wapify Backend
 
-Node.js + Express + Supabase + Huapi API
+Node.js + Express + Supabase + Wapu API
 
 ## Setup
 
@@ -34,7 +34,7 @@ backend/
 POST /api/auth/register
 POST /api/auth/login
 POST /api/auth/logout
-POST /api/auth/huapi-callback
+POST /api/auth/wapu-callback
 GET  /api/auth/me
 ```
 
@@ -57,7 +57,7 @@ POST /api/orders/:id/pay
 
 ### Webhooks (Público)
 ```
-POST /webhooks/huapi
+POST /webhooks/wapu
 ```
 
 ## Scripts
@@ -74,34 +74,34 @@ POST /webhooks/huapi
 
 Ver `.env.example`:
 - DATABASE_URL
-- HUAPI_CLIENT_ID
-- HUAPI_API_KEY
-- HUAPI_WEBHOOK_SECRET
+- WAPU_CLIENT_ID
+- WAPU_API_KEY
+- WAPU_WEBHOOK_SECRET
 - NEXTAUTH_SECRET
 
 ## TODO (Hackaton)
 
 - [ ] Express setup + Supabase
 - [ ] Auth endpoints
-- [ ] Huapi OAuth integration
+- [ ] Wapu OAuth integration
 - [ ] Products CRUD
 - [ ] Orders CRUD
-- [ ] Payment flow with Huapi
+- [ ] Payment flow with Wapu
 - [ ] Webhook handler
 - [ ] Email notifications
 
-## Huapi Integration
+## Wapu Integration
 
-- OAuth callback: `/api/auth/huapi-callback`
+- OAuth callback: `/api/auth/wapu-callback`
 - Start payment: POST `/api/orders/:id/pay`
-- Webhook: POST `/webhooks/huapi` (público)
+- Webhook: POST `/webhooks/wapu` (público)
 
 Credenciales necesarias:
 ```
-HUAPI_CLIENT_ID=xxx
-HUAPI_CLIENT_SECRET=xxx
-HUAPI_API_KEY=xxx
-HUAPI_WEBHOOK_SECRET=xxx
+WAPU_CLIENT_ID=xxx
+WAPU_CLIENT_SECRET=xxx
+WAPU_API_KEY=xxx
+WAPU_WEBHOOK_SECRET=xxx
 ```
 
 ---

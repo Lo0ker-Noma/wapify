@@ -1,23 +1,25 @@
-# 🛍️ Wapufy
+# 🛍️ Wapify
 
-**Wapufy** = Shopify + Wapu (Procesador de Pagos P2P)
+**Wapify** = Shopify + Wapu (Procesador de Pagos P2P Argentina)
 
-Una plataforma eCommerce simplificada diseñada para el tercer hackaton de La Cripta, enfocada en integración sin fricciones con **Huapi** como procesador de pagos entre personas.
+Una plataforma eCommerce simplificada diseñada para el tercer hackaton de La Cripta, enfocada en integración sin fricciones con **Wapu** como procesador de pagos entre personas.
 
 ## 📋 Hackaton Info
 - **Evento**: La Cripta Hackaton #3
 - **Tema**: eCommerce
-- **Patrocinador**: [Wapi](https://my.wapu.app/) - Procesador de pagos P2P Argentina
+- **Patrocinador**: [Wapu](https://wapu.com.ar/) - Procesador de pagos P2P Argentina
 - **Objetivo**: Crear una plataforma de ventas rápida y con integración nativa de Wapu
 
 ## 🎯 Propuesta
 
-Una alternativa **simple, rápida y moderna** a Shopify, pero especializada en:
-- ✅ Integración directa con Wapu (sin middleman)
+Un clon de los servicios y modelo operativo de Shopify, pero **rediseñado para integración total con Wapu** y autenticación nativa con Nostr:
+- ✅ Integración end-to-end con Wapu (pagos P2P sin middleman)
+- ✅ **Login con Nostr (NIP-07)**: tu identidad es tu npub, sin emails ni contraseñas
 - ✅ Para vendedores latinoamericanos (especialmente Argentina)
 - ✅ Setup en minutos, no en horas
-- ✅ Comisiones competitivas
+- ✅ Comisiones competitivas (solo lo que cobra Wapu)
 - ✅ Dashboard intuitivo para gestión de productos y pagos
+- ✅ Stack Shopify-style (catálogo, carrito, checkout, órdenes, webhooks) pero soberano
 
 ## 🏗️ Estructura del Proyecto
 
@@ -33,14 +35,19 @@ Una alternativa **simple, rápida y moderna** a Shopify, pero especializada en:
 
 ## 🚀 MVP Features (Hackaton)
 
-### Fase 1: Productos & Checkout
+### Fase 0: Auth Nostr (NIP-07)
+- [ ] Login con extensión NIP-07 (`window.nostr.getPublicKey()`)
+- [ ] Sesión basada en npub + firma de challenge (NIP-42 style)
+- [ ] Perfil del vendedor desde su kind:0 en relays públicos
+
+### Fase 1: Productos & Checkout (Shopify-clone)
 - [ ] Crear/editar productos (nombre, precio, imagen, stock)
 - [ ] Carrito de compras
-- [ ] Checkout integrado con Huapi
+- [ ] Checkout integrado con Wapu
 
 ### Fase 2: Ordenes & Pagos
 - [ ] Página de órdenes recientes
-- [ ] Confirmación de pagos via Huapi webhook
+- [ ] Confirmación de pagos via Wapu webhook
 - [ ] Dashboard básico del vendedor
 
 ### Fase 3: Branding
@@ -52,7 +59,7 @@ Una alternativa **simple, rápida y moderna** a Shopify, pero especializada en:
 ### Backend
 - Node.js + Express
 - PostgreSQL / Supabase
-- Integración Huapi API
+- Integración Wapu API
 
 ### Frontend
 - Next.js 14+ (App Router)
@@ -64,10 +71,10 @@ Una alternativa **simple, rápida y moderna** a Shopify, pero especializada en:
 - Vercel para frontend
 - Supabase para database (free tier)
 
-## 🤝 Huapi Integration
+## 🤝 Wapu Integration
 
 ```
-[Cliente] → [Wapify Checkout] → [Huapi API] → [Banco]
+[Cliente] → [Wapify Checkout] → [Wapu API] → [Banco]
                 ↓
         [Webhook Confirmación]
                 ↓
@@ -77,16 +84,16 @@ Una alternativa **simple, rápida y moderna** a Shopify, pero especializada en:
 Flujo:
 1. Cliente selecciona productos
 2. Va a checkout
-3. Inicia pago con Huapi (sin salir de Wapify)
-4. Huapi procesa el pago P2P
+3. Inicia pago con Wapu (sin salir de Wapify)
+4. Wapu procesa el pago P2P
 5. Webhook confirma al vendedor
 
 ## 📅 Timeline (Hackaton)
 
 | Fase | Tiempo | Objetivo |
 |------|--------|----------|
-| Setup & Auth | 1h | Repos, DB, credenciales Huapi |
-| MVP Backend | 3h | API productos, órdenes, Huapi |
+| Setup & Auth | 1h | Repos, DB, credenciales Wapu |
+| MVP Backend | 3h | API productos, órdenes, Wapu |
 | MVP Frontend | 3h | Store, carrito, checkout |
 | Integraciones | 2h | Webhooks, emails, UI |
 | Testing & Deploy | 1h | Demo listo |
@@ -103,7 +110,7 @@ cd 04_Wapify
 # 2. Setup local
 npm install
 cp .env.example .env
-# Agregar credenciales de Huapi
+# Agregar credenciales de Wapu
 
 # 3. Desarrollo
 npm run dev
@@ -119,21 +126,21 @@ git push origin feature/tu-feature
 | Feature | Shopify | Wapify |
 |---------|---------|--------|
 | Setup | 20+ min | < 5 min |
-| Comisión | 2.2% + $0.30 | Transparente Huapi |
+| Comisión | 2.2% + $0.30 | Transparente Wapu |
 | Para LA | Global | 🎯 LATAM |
-| Pagos P2P | No | ✅ Huapi nativo |
+| Pagos P2P | No | ✅ Wapu nativo |
 | Costo | $29/mes | Free + pagos |
 
 ## 📝 Notas para el Hackaton
 
-- **Prioridad**: Pago con Huapi funcional (core)
+- **Prioridad**: Pago con Wapu funcional (core)
 - **Stretch**: Personalización de tienda
 - **Nice-to-have**: Analytics básicos
 
 ## 🔗 Links Útiles
 
 - [La Cripta Dev](https://lacrypta.dev/)
-- [Documentación Huapi](https://docs.huapi.com.ar/)
+- [Documentación Wapu](https://docs.wapu.com.ar/)
 
 ---
 

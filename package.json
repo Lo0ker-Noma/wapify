@@ -1,7 +1,7 @@
 {
   "name": "wapify",
   "version": "0.1.0",
-  "description": "Shopify + Huapi = Wapify. eCommerce platform for LATAM with integrated P2P payments",
+  "description": "Shopify + Wapu = Wapify. eCommerce platform for LATAM with integrated P2P payments",
   "private": true,
   "author": "La Cripta Hackaton #3",
   "license": "MIT",
@@ -19,7 +19,7 @@
   "keywords": [
     "ecommerce",
     "shopify",
-    "huapi",
+    "wapu",
     "payments",
     "latam",
     "argentina"

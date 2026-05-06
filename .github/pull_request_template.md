@@ -33,7 +33,7 @@
 ## 🔗 Links
 
 - Related Issue: #
-- Huapi Docs: https://docs.huapi.com.ar/
+- Wapu Docs: https://docs.wapu.com.ar/
 - Design/Mock: 
 
 ## 📸 Screenshots (si aplica)
@@ -45,7 +45,7 @@
 Este PR necesita:
 - [ ] Environment variables nuevas (actualizar .env.example)
 - [ ] Database migrations (actualizar schema)
-- [ ] API keys (Huapi, Supabase, etc)
+- [ ] API keys (Wapu, Supabase, etc)
 
 ## 🏆 Hackaton Status
 
@@ -53,7 +53,7 @@ Tarea completada:
 - [ ] Auth
 - [ ] Products
 - [ ] Orders
-- [ ] Huapi Integration
+- [ ] Wapu Integration
 - [ ] Frontend
 - [ ] Testing
 - [ ] Deployment

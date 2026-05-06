@@ -1,0 +1,27 @@
+{
+  "name": "wapify",
+  "version": "0.1.0",
+  "description": "Shopify + Huapi = Wapify. eCommerce platform for LATAM with integrated P2P payments",
+  "private": true,
+  "author": "La Cripta Hackaton #3",
+  "license": "MIT",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format": "npm run format --workspaces"
+  },
+  "keywords": [
+    "ecommerce",
+    "shopify",
+    "huapi",
+    "payments",
+    "latam",
+    "argentina"
+  ]
+}

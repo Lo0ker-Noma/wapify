@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { SimplePool } from "nostr-tools/pool";
+import { nip19 } from "nostr-tools";
 
 declare global {
   interface Window {
@@ -24,8 +26,27 @@ declare global {
   }
 }
 
+const RELAYS = [
+  "wss://relay.damus.io",
+  "wss://relay.primal.net",
+  "wss://nos.lol",
+  "wss://relay.nostr.band",
+];
+
+type Profile = {
+  name?: string;
+  display_name?: string;
+  picture?: string;
+  about?: string;
+  nip05?: string;
+  lud16?: string;
+  banner?: string;
+};
+
 export default function LoginPage() {
   const [pubkey, setPubkey] = useState<string | null>(null);
+  const [npub, setNpub] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +60,7 @@ export default function LoginPage() {
         );
       }
       const pk = await window.nostr.getPublicKey();
-      const challenge = await window.nostr.signEvent({
+      await window.nostr.signEvent({
         kind: 22242,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
@@ -48,8 +69,25 @@ export default function LoginPage() {
         ],
         content: "Wapufy login",
       });
-      console.log("Signed challenge", challenge);
+
       setPubkey(pk);
+      setNpub(nip19.npubEncode(pk));
+
+      // Fetch kind:0 metadata across multiple relays
+      const pool = new SimplePool();
+      try {
+        const event = await pool.get(RELAYS, { kinds: [0], authors: [pk] });
+        if (event?.content) {
+          try {
+            const parsed = JSON.parse(event.content) as Profile;
+            setProfile(parsed);
+          } catch {
+            // ignore malformed metadata
+          }
+        }
+      } finally {
+        pool.close(RELAYS);
+      }
     } catch (e: any) {
       setError(e?.message ?? "Error desconocido");
     } finally {
@@ -139,26 +177,145 @@ export default function LoginPage() {
           </>
         ) : (
           <>
-            <h3
+            <div
               style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 22,
-                fontWeight: 600,
-                marginBottom: 12,
-                color: "var(--primary)",
+                display: "flex",
+                alignItems: "center",
+                gap: 20,
+                marginBottom: 20,
               }}
             >
-              ✓ Conectado
-            </h3>
-            <p style={{ marginBottom: 8, fontSize: 14 }}>
-              <strong>npub:</strong>
-            </p>
-            <code style={{ wordBreak: "break-all", display: "block", padding: 12, marginBottom: 20 }}>
-              {pubkey}
-            </code>
-            <p className="muted" style={{ fontSize: 14 }}>
+              {profile?.picture ? (
+                <img
+                  src={profile.picture}
+                  alt={profile.display_name ?? profile.name ?? "Avatar"}
+                  style={{
+                    width: 88,
+                    height: 88,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "2px solid var(--primary)",
+                    boxShadow: "0 0 24px var(--primary-glow)",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 88,
+                    height: 88,
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg, var(--primary), var(--lightning))",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 32,
+                    fontWeight: 700,
+                    color: "#000",
+                  }}
+                >
+                  {(profile?.name ?? "N")[0]?.toUpperCase()}
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--primary)",
+                    fontWeight: 600,
+                    letterSpacing: 1.5,
+                    textTransform: "uppercase",
+                    marginBottom: 4,
+                  }}
+                >
+                  ✓ Conectado
+                </div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: 24,
+                    fontWeight: 700,
+                    marginBottom: 4,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {profile?.display_name ?? profile?.name ?? "Sin nombre"}
+                </h3>
+                {profile?.nip05 && (
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "var(--text-secondary)",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {profile.nip05}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {profile?.about && (
+              <p
+                className="muted"
+                style={{ fontSize: 14, marginBottom: 16, lineHeight: 1.5 }}
+              >
+                {profile.about}
+              </p>
+            )}
+
+            <div
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: 1.5,
+                  marginBottom: 6,
+                }}
+              >
+                npub
+              </div>
+              <code
+                style={{
+                  wordBreak: "break-all",
+                  display: "block",
+                  fontSize: 12,
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {npub}
+              </code>
+            </div>
+
+            {profile?.lud16 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 14,
+                  color: "var(--primary)",
+                  marginBottom: 8,
+                }}
+              >
+                ⚡ <strong>{profile.lud16}</strong>
+              </div>
+            )}
+
+            <p className="muted" style={{ fontSize: 13, marginTop: 12 }}>
               Próximo paso: el backend verifica la firma del challenge y
-              devuelve una cookie de sesión. (TODO en este MVP.)
+              devuelve una cookie de sesión.
             </p>
           </>
         )}

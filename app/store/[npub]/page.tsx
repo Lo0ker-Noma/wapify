@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-type Product = { id: string; name: string; price: number; img: string; tag?: string };
+type Product = {
+  id: string;
+  name: string;
+  subtitle?: string;
+  price: number; // in sats
+  img: string;
+  tag?: string;
+};
 
 type Store = {
   name: string;
@@ -20,19 +27,19 @@ const MOCK_STORES: Record<string, Store> = {
       {
         id: "p1",
         name: "Yerba mate orgánica 500g",
-        price: 4500,
+        price: 4,
         img: "https://placehold.co/600x600/0a0a0a/dc4d8a/png?text=Yerba",
       },
       {
         id: "p2",
         name: "Mate de calabaza",
-        price: 12000,
+        price: 7,
         img: "https://placehold.co/600x600/0a0a0a/9945ff/png?text=Mate",
       },
       {
         id: "p3",
         name: "Bombilla de alpaca",
-        price: 8500,
+        price: 5,
         img: "https://placehold.co/600x600/0a0a0a/dc4d8a/png?text=Bombilla",
       },
     ],
@@ -48,46 +55,53 @@ const MOCK_STORES: Record<string, Store> = {
     },
     products: [
       {
-        id: "tee-hdmp",
-        name: "Tee 'HDMP' Negra",
-        price: 35000,
-        img: "https://placehold.co/600x600/000000/00ff9d/png?text=HDMP+TEE",
+        id: "yerba-hdmp",
+        name: "Yerba Mate HDMP",
+        subtitle: "Yerba mate con palo para tener el pito parado.",
+        price: 8,
+        img: "https://placehold.co/600x600/000000/00ff9d/png?text=YERBA+HDMP",
         tag: "★ Más vendida",
       },
       {
         id: "hoodie-crypta",
         name: "Hoodie LaCrypta Black",
-        price: 95000,
+        subtitle: "Algodón pesado, capucha forrada. Made in AR.",
+        price: 7,
         img: "https://placehold.co/600x600/000000/00ff9d/png?text=HOODIE",
       },
       {
         id: "cap-hdmp",
         name: "Gorra HDMP Verde",
-        price: 25000,
+        subtitle: "Bordado verde Nostr sobre negro.",
+        price: 5,
         img: "https://placehold.co/600x600/000000/00ff9d/png?text=CAP",
       },
       {
         id: "stickers",
         name: "Sticker Pack (10u)",
-        price: 8000,
+        subtitle: "Pack troquelado, vinilo resistente al agua.",
+        price: 3,
         img: "https://placehold.co/600x600/000000/9945ff/png?text=STICKERS",
       },
       {
         id: "tote-hodl",
         name: "Tote 'HODL' Crudo",
-        price: 18000,
+        subtitle: "Para llevar tus seeds y la merca a la feria.",
+        price: 4,
         img: "https://placehold.co/600x600/000000/00ff9d/png?text=TOTE",
       },
       {
         id: "mug-lightning",
         name: "Taza ⚡ Lightning",
-        price: 15000,
+        subtitle: "Cerámica, 350ml, asa anti-quema-dedos.",
+        price: 5,
         img: "https://placehold.co/600x600/000000/9945ff/png?text=MUG",
       },
       {
         id: "spray-antikukas",
         name: "Spray de Pimienta Antikukas",
-        price: 22000,
+        subtitle: "Perfecto para que no te suen la billetera.",
+        price: 6,
         img: "https://placehold.co/600x600/000000/00ff9d/png?text=ANTIKUKAS",
         tag: "🌶 Defensa P2P",
       },
@@ -166,7 +180,7 @@ export default function StorePage({
 
       <div className="row">
         {store.products.map((p) => {
-          const checkoutUrl = `/checkout?amount=${p.price}&product=${encodeURIComponent(
+          const checkoutUrl = `/checkout?sats=${p.price}&product=${encodeURIComponent(
             p.name
           )}${store.seller_username ? `&seller=${store.seller_username}` : ""}`;
           return (
@@ -207,13 +221,34 @@ export default function StorePage({
                   fontFamily: "var(--font-display)",
                   fontSize: 18,
                   fontWeight: 600,
-                  marginBottom: 6,
+                  marginBottom: p.subtitle ? 4 : 6,
                 }}
               >
                 {p.name}
               </h3>
-              <p className="muted" style={{ fontSize: 14, marginBottom: 16 }}>
-                ${p.price.toLocaleString("es-AR")} ARS
+              {p.subtitle && (
+                <p
+                  className="muted"
+                  style={{
+                    fontSize: 13,
+                    fontStyle: "italic",
+                    marginBottom: 10,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {p.subtitle}
+                </p>
+              )}
+              <p
+                style={{
+                  fontSize: 15,
+                  marginBottom: 16,
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--primary)",
+                  fontWeight: 600,
+                }}
+              >
+                ⚡ {p.price.toLocaleString("es-AR")} sats
               </p>
               <Link href={checkoutUrl} className="btn btn-primary btn-block">
                 Comprar con Wapu ⚡

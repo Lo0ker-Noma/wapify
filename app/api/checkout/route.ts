@@ -20,21 +20,25 @@ import { arsToSats, getLnurlpInvoice, lightningAddress } from "@/lib/wapu";
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
+    const amountSatsRaw = Number(body.amount_sats);
     const amountArs = Number(body.amount_ars);
     const sellerUsername =
       body.seller_username ||
       process.env.WAPU_DEMO_SELLER ||
       "lacrypta"; // safe public-looking fallback for the demo
 
-    if (!Number.isFinite(amountArs) || amountArs <= 0) {
+    let amountSat: number;
+    if (Number.isFinite(amountSatsRaw) && amountSatsRaw > 0) {
+      amountSat = Math.floor(amountSatsRaw);
+    } else if (Number.isFinite(amountArs) && amountArs > 0) {
+      amountSat = await arsToSats(amountArs);
+    } else {
       return NextResponse.json(
-        { error: "amount_ars must be a positive number" },
+        { error: "amount_sats or amount_ars must be a positive number" },
         { status: 400 }
       );
     }
 
-    // Convert ARS → SAT using Wapu's current rates
-    const amountSat = await arsToSats(amountArs);
     if (amountSat < 1) {
       return NextResponse.json(
         { error: "Amount too small to generate a Lightning invoice" },

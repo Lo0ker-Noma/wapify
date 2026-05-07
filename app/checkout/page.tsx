@@ -16,7 +16,7 @@ type Phase = "loading" | "ready" | "paid" | "error";
 
 function CheckoutContent() {
   const params = useSearchParams();
-  const amountArs = Number(params.get("amount") ?? "0");
+  const amountSats = Number(params.get("sats") ?? "0");
   const productName = params.get("product") ?? "Compra";
   const seller = params.get("seller") ?? undefined;
 
@@ -36,7 +36,7 @@ function CheckoutContent() {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            amount_ars: amountArs,
+            amount_sats: amountSats,
             seller_username: seller,
             product_id: productName,
           }),
@@ -59,15 +59,15 @@ function CheckoutContent() {
         setPhase("error");
       }
     }
-    if (amountArs > 0) init();
+    if (amountSats > 0) init();
     else {
-      setError("Falta el parámetro amount en la URL");
+      setError("Falta el parámetro sats en la URL");
       setPhase("error");
     }
     return () => {
       cancelled = true;
     };
-  }, [amountArs, seller, productName]);
+  }, [amountSats, seller, productName]);
 
   // 2. Polling al verify URL cada 3s
   useEffect(() => {
@@ -118,7 +118,7 @@ function CheckoutContent() {
         {phase === "paid" ? "✓ Pagado" : "Escaneá y pagá"}
       </h1>
       <p className="muted" style={{ fontSize: 15, marginBottom: 24 }}>
-        {productName} · ${amountArs.toLocaleString("es-AR")} ARS
+        {productName} · ⚡ {amountSats.toLocaleString("es-AR")} sats
       </p>
 
       {phase === "loading" && (

@@ -5,6 +5,7 @@ import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { upload } from "@vercel/blob/client";
 import { useAuth } from "@/app/components/AuthProvider";
+import ProductDetailModal from "@/app/components/ProductDetailModal";
 import {
   Product,
   loadProducts,
@@ -28,6 +29,7 @@ export default function StorePage() {
   const [meta, setMeta] = useState<StoreMeta | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [editingMeta, setEditingMeta] = useState(false);
+  const [viewing, setViewing] = useState<Product | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -207,122 +209,140 @@ export default function StorePage() {
       )}
 
       <div className="row">
-        {products.map((p) => {
-          const checkoutUrl =
-            `/checkout?sats=${p.price}&product=${encodeURIComponent(p.name)}` +
-            (lnParam ? `&ln=${encodeURIComponent(lnParam)}` : "") +
-            (wapuParam ? `&wapu=${encodeURIComponent(wapuParam)}` : "");
-          return (
-            <div key={p.id} className="feature-card" style={{ position: "relative" }}>
-              <div style={{ position: "relative" }}>
-                <img
-                  src={p.img}
-                  alt={p.name}
-                  style={{
-                    width: "100%",
-                    aspectRatio: "1 / 1",
-                    objectFit: "cover",
-                    borderRadius: 12,
-                    marginBottom: 16,
-                  }}
-                />
-                {p.tag && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: 10,
-                      left: 10,
-                      padding: "4px 10px",
-                      background: "var(--primary)",
-                      color: "#000",
-                      borderRadius: 100,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {p.tag}
-                  </span>
-                )}
-                {canEdit && (
-                  <button
-                    onClick={() => setEditing(p)}
-                    style={{
-                      position: "absolute",
-                      top: 10,
-                      right: 10,
-                      background: "rgba(0,0,0,0.7)",
-                      border: "1px solid var(--primary)",
-                      color: "var(--primary)",
-                      padding: "6px 10px",
-                      borderRadius: 8,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      backdropFilter: "blur(8px)",
-                    }}
-                  >
-                    ✎ Editar
-                  </button>
-                )}
-              </div>
-              <h3
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className="feature-card"
+            onClick={() => setViewing(p)}
+            style={{
+              position: "relative",
+              cursor: "pointer",
+              transition: "transform .2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+          >
+            <div style={{ position: "relative" }}>
+              <img
+                src={p.img}
+                alt={p.name}
                 style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 18,
-                  fontWeight: 600,
-                  marginBottom: p.subtitle ? 4 : 6,
+                  width: "100%",
+                  aspectRatio: "1 / 1",
+                  objectFit: "cover",
+                  borderRadius: 12,
+                  marginBottom: 16,
                 }}
-              >
-                {p.name}
-              </h3>
-              {p.subtitle && (
-                <p
-                  className="muted"
+              />
+              {p.tag && (
+                <span
                   style={{
-                    fontSize: 13,
-                    fontStyle: "italic",
-                    marginBottom: 10,
-                    lineHeight: 1.4,
+                    position: "absolute",
+                    top: 10,
+                    left: 10,
+                    padding: "4px 10px",
+                    background: "var(--primary)",
+                    color: "#000",
+                    borderRadius: 100,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 0.5,
                   }}
                 >
-                  {p.subtitle}
-                </p>
+                  {p.tag}
+                </span>
               )}
-              <p
-                style={{
-                  fontSize: 15,
-                  marginBottom: 16,
-                  fontFamily: "var(--font-mono)",
-                  color: "var(--primary)",
-                  fontWeight: 600,
-                }}
-              >
-                ⚡ {p.price.toLocaleString("es-AR")} sats
-              </p>
-              <Link href={checkoutUrl} className="btn btn-primary btn-block">
-                Comprar con Wapu ⚡
-              </Link>
               {canEdit && (
                 <button
-                  onClick={() => removeProduct(p.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(p);
+                  }}
                   style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#f87171",
+                    position: "absolute",
+                    top: 10,
+                    right: 10,
+                    background: "rgba(0,0,0,0.7)",
+                    border: "1px solid var(--primary)",
+                    color: "var(--primary)",
+                    padding: "6px 10px",
+                    borderRadius: 8,
                     fontSize: 12,
-                    fontWeight: 500,
+                    fontWeight: 600,
                     cursor: "pointer",
-                    marginTop: 10,
-                    width: "100%",
+                    backdropFilter: "blur(8px)",
                   }}
                 >
-                  Eliminar producto
+                  ✎ Editar
                 </button>
               )}
             </div>
-          );
-        })}
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 18,
+                fontWeight: 600,
+                marginBottom: p.subtitle ? 4 : 6,
+              }}
+            >
+              {p.name}
+            </h3>
+            {p.subtitle && (
+              <p
+                className="muted"
+                style={{
+                  fontSize: 13,
+                  fontStyle: "italic",
+                  marginBottom: 10,
+                  lineHeight: 1.4,
+                }}
+              >
+                {p.subtitle}
+              </p>
+            )}
+            <p
+              style={{
+                fontSize: 15,
+                marginBottom: 16,
+                fontFamily: "var(--font-mono)",
+                color: "var(--primary)",
+                fontWeight: 600,
+              }}
+            >
+              ⚡ {p.price.toLocaleString("es-AR")} sats
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary btn-block"
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewing(p);
+              }}
+            >
+              Ver y comprar ⚡
+            </button>
+            {canEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeProduct(p.id);
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#f87171",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  marginTop: 10,
+                  width: "100%",
+                }}
+              >
+                Eliminar producto
+              </button>
+            )}
+          </div>
+        ))}
       </div>
 
       <div
@@ -357,6 +377,15 @@ export default function StorePage() {
           meta={meta}
           onClose={() => setEditingMeta(false)}
           onSave={saveMetaEdit}
+        />
+      )}
+
+      {viewing && (
+        <ProductDetailModal
+          product={viewing}
+          lnAddress={lnParam}
+          wapuUsername={wapuParam}
+          onClose={() => setViewing(null)}
         />
       )}
     </div>

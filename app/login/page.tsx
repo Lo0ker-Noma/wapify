@@ -1,97 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { SimplePool } from "nostr-tools/pool";
-import { nip19 } from "nostr-tools";
-
-declare global {
-  interface Window {
-    nostr?: {
-      getPublicKey: () => Promise<string>;
-      signEvent: (event: {
-        kind: number;
-        created_at: number;
-        tags: string[][];
-        content: string;
-      }) => Promise<{
-        id: string;
-        pubkey: string;
-        kind: number;
-        created_at: number;
-        tags: string[][];
-        content: string;
-        sig: string;
-      }>;
-    };
-  }
-}
-
-const RELAYS = [
-  "wss://relay.damus.io",
-  "wss://relay.primal.net",
-  "wss://nos.lol",
-  "wss://relay.nostr.band",
-];
-
-type Profile = {
-  name?: string;
-  display_name?: string;
-  picture?: string;
-  about?: string;
-  nip05?: string;
-  lud16?: string;
-  banner?: string;
-};
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "../components/AuthProvider";
 
 export default function LoginPage() {
-  const [pubkey, setPubkey] = useState<string | null>(null);
-  const [npub, setNpub] = useState<string | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { pubkey, npub, profile, isAdmin, loading, login } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  async function handleNostrLogin() {
+  // If admin already logged, bounce to dashboard
+  useEffect(() => {
+    if (pubkey && isAdmin) router.replace("/dashboard");
+  }, [pubkey, isAdmin, router]);
+
+  async function handle() {
     setError(null);
-    setLoading(true);
     try {
-      if (typeof window === "undefined" || !window.nostr) {
-        throw new Error(
-          "No se encontró extensión NIP-07. Instalá Alby, nos2x o Flamingo."
-        );
-      }
-      const pk = await window.nostr.getPublicKey();
-      await window.nostr.signEvent({
-        kind: 22242,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [
-          ["relay", "wapufy.app"],
-          ["challenge", `wapufy-login-${Date.now()}`],
-        ],
-        content: "Wapufy login",
-      });
-
-      setPubkey(pk);
-      setNpub(nip19.npubEncode(pk));
-
-      // Fetch kind:0 metadata across multiple relays
-      const pool = new SimplePool();
-      try {
-        const event = await pool.get(RELAYS, { kinds: [0], authors: [pk] });
-        if (event?.content) {
-          try {
-            const parsed = JSON.parse(event.content) as Profile;
-            setProfile(parsed);
-          } catch {
-            // ignore malformed metadata
-          }
-        }
-      } finally {
-        pool.close(RELAYS);
-      }
+      await login();
     } catch (e: any) {
       setError(e?.message ?? "Error desconocido");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -110,10 +39,7 @@ export default function LoginPage() {
       >
         Tu npub es tu cuenta.
       </h1>
-      <p
-        className="muted"
-        style={{ fontSize: 17, marginBottom: 32, maxWidth: 520 }}
-      >
+      <p className="muted" style={{ fontSize: 17, marginBottom: 32, maxWidth: 520 }}>
         Wapufy nunca toca tu llave privada. Solo te pide firmar un challenge
         efímero (kind:22242) para probar que sos vos.
       </p>
@@ -154,7 +80,7 @@ export default function LoginPage() {
             </p>
             <button
               className="btn btn-primary btn-large btn-block"
-              onClick={handleNostrLogin}
+              onClick={handle}
               disabled={loading}
             >
               {loading ? "Esperando firma…" : "Login con Nostr →"}
@@ -236,8 +162,6 @@ export default function LoginPage() {
                     fontSize: 24,
                     fontWeight: 700,
                     marginBottom: 4,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
                   }}
                 >
                   {profile?.display_name ?? profile?.name ?? "Sin nombre"}
@@ -253,6 +177,25 @@ export default function LoginPage() {
                     {profile.nip05}
                   </div>
                 )}
+                {isAdmin && (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      marginTop: 8,
+                      padding: "3px 10px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      borderRadius: 100,
+                      background: "rgba(0,255,157,0.12)",
+                      color: "#00ff9d",
+                      border: "1px solid rgba(0,255,157,0.3)",
+                      letterSpacing: 1,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    ★ Admin · LaCrypta
+                  </span>
+                )}
               </div>
             </div>
 
@@ -265,77 +208,37 @@ export default function LoginPage() {
               </p>
             )}
 
-            <div
+            <code
               style={{
+                wordBreak: "break-all",
+                display: "block",
+                fontSize: 12,
+                fontFamily: "var(--font-mono)",
+                color: "var(--text-secondary)",
                 background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 8,
                 padding: 12,
+                borderRadius: 8,
                 marginBottom: 16,
               }}
             >
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: 1.5,
-                  marginBottom: 6,
-                }}
-              >
-                npub
-              </div>
-              <code
-                style={{
-                  wordBreak: "break-all",
-                  display: "block",
-                  fontSize: 12,
-                  fontFamily: "var(--font-mono)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {npub}
-              </code>
-            </div>
+              {npub}
+            </code>
 
-            {profile?.lud16 && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 14,
-                  color: "var(--primary)",
-                  marginBottom: 8,
-                }}
+            {isAdmin ? (
+              <Link
+                href="/dashboard"
+                className="btn btn-primary btn-block"
               >
-                ⚡ <strong>{profile.lud16}</strong>
-              </div>
+                Ir al Dashboard →
+              </Link>
+            ) : (
+              <Link href="/store/lacrypta" className="btn btn-outline btn-block">
+                Ver tienda demo
+              </Link>
             )}
-
-            <p className="muted" style={{ fontSize: 13, marginTop: 12 }}>
-              Próximo paso: el backend verifica la firma del challenge y
-              devuelve una cookie de sesión.
-            </p>
           </>
         )}
       </div>
-
-      <p
-        className="muted"
-        style={{ marginTop: 24, fontSize: 13, textAlign: "center" }}
-      >
-        ¿Sin extensión? Próximamente soportamos{" "}
-        <a
-          href="https://nips.nostr.com/46"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "var(--primary)" }}
-        >
-          NIP-46
-        </a>{" "}
-        (remote signer) y nsec bunker para móviles.
-      </p>
     </div>
   );
 }

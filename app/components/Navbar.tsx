@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "./AuthProvider";
+import UserMenu from "./UserMenu";
 
 export default function Navbar() {
+  const { pubkey } = useAuth();
   return (
     <nav className="navbar">
       <div className="nav-container">
@@ -14,9 +19,13 @@ export default function Navbar() {
           <a href="/#manage">Manage</a>
           <a href="/#pricing">Pricing</a>
           <Link href="/store/lacrypta">Demo</Link>
-          <Link href="/login" className="btn btn-primary btn-nav">
-            Empezar gratis
-          </Link>
+          {pubkey ? (
+            <UserMenu />
+          ) : (
+            <Link href="/login" className="btn btn-primary btn-nav">
+              Empezar gratis
+            </Link>
+          )}
         </div>
       </div>
     </nav>

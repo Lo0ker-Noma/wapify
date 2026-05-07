@@ -674,6 +674,30 @@ code {
   margin-bottom: 24px;
 }
 
+/* ===== Form inputs ===== */
+.form-input-wrap input,
+.form-input-wrap textarea,
+input.wapu-input,
+textarea.wapu-input {
+  width: 100%;
+  padding: 11px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.form-input-wrap input:focus,
+.form-input-wrap textarea:focus,
+input.wapu-input:focus,
+textarea.wapu-input:focus {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* ===== Theme override: La Crypta (verde Nostr) ===== */
 .theme-crypta {
   --primary: #00ff9d;

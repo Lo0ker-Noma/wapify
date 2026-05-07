@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 
@@ -14,7 +14,7 @@ type CheckoutData = {
 
 type Phase = "loading" | "ready" | "paid" | "error";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const params = useSearchParams();
   const amountArs = Number(params.get("amount") ?? "0");
   const productName = params.get("product") ?? "Compra";
@@ -266,5 +266,13 @@ export default function CheckoutPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="page-wrap"><p className="muted">Cargando checkout…</p></div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

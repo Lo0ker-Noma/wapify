@@ -385,7 +385,14 @@ function ProductModal({
       });
       setDraft((d) => ({ ...d, img: blob.url }));
     } catch (e: any) {
-      setUploadError(e?.message ?? "Error subiendo imagen");
+      const msg = e?.message ?? "Error subiendo imagen";
+      if (msg.includes("client token")) {
+        setUploadError(
+          "Vercel Blob no está configurado. En el Vercel Dashboard: Storage → Create Database → Blob → conectalo al proyecto. Eso seteo BLOB_READ_WRITE_TOKEN automáticamente."
+        );
+      } else {
+        setUploadError(msg);
+      }
     } finally {
       setUploading(false);
     }

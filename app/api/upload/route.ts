@@ -10,6 +10,17 @@ import { NextResponse } from "next/server";
  * is connected to the project).
  */
 export async function POST(request: Request): Promise<NextResponse> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error("[upload] BLOB_READ_WRITE_TOKEN not set");
+    return NextResponse.json(
+      {
+        error:
+          "Vercel Blob no está configurado. Conectá un Blob store al proyecto en Vercel → Storage → Create Database → Blob, y volvé a intentar tras el redeploy.",
+      },
+      { status: 500 }
+    );
+  }
+
   const body = (await request.json()) as HandleUploadBody;
 
   try {

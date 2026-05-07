@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import { recordOrder, markOrderPaid } from "@/lib/orders";
@@ -14,12 +14,19 @@ type CheckoutData = {
 };
 
 type Phase = "loading" | "ready" | "paid" | "error";
+type Method = "wapu" | "lightning";
 
 function CheckoutContent() {
   const params = useSearchParams();
   const amountSats = Number(params.get("sats") ?? "0");
   const productName = params.get("product") ?? "Compra";
-  const seller = params.get("seller") ?? undefined;
+  // Both new params and legacy `seller` are supported
+  const lnAddress = params.get("ln") ?? params.get("seller") ?? "";
+  const wapuUsername = params.get("wapu") ?? "";
+
+  // Default method: Wapu when available (instant LUD-21 verify), else Lightning
+  const initialMethod: Method = wapuUsername ? "wapu" : "lightning";
+  const [method, setMethod] = useState<Method>(initialMethod);
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -29,9 +36,20 @@ function CheckoutContent() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const polledRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Pedir invoice al cargar
+  const seller = useMemo(() => {
+    if (method === "wapu") return wapuUsername || lnAddress;
+    return lnAddress || wapuUsername;
+  }, [method, lnAddress, wapuUsername]);
+
+  // Re-fetch invoice when method changes
   useEffect(() => {
     let cancelled = false;
+    setPhase("loading");
+    setData(null);
+    setQr(null);
+    setError(null);
+    setOrderId(null);
+
     async function init() {
       try {
         const res = await fetch("/api/checkout", {
@@ -39,7 +57,7 @@ function CheckoutContent() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             amount_sats: amountSats,
-            seller_username: seller,
+            seller,
             product_id: productName,
           }),
         });
@@ -69,20 +87,28 @@ function CheckoutContent() {
         setPhase("error");
       }
     }
-    if (amountSats > 0) init();
-    else {
+
+    if (amountSats > 0 && seller) init();
+    else if (!seller) {
+      setError("Falta el vendedor (Lightning Address o Wapu username)");
+      setPhase("error");
+    } else {
       setError("Falta el parámetro sats en la URL");
       setPhase("error");
     }
+
     return () => {
       cancelled = true;
     };
-  }, [amountSats, seller, productName]);
+  }, [amountSats, seller, productName, method]);
 
-  // 2. Polling al verify URL cada 3s
+  // Polling — faster cadence (1.5s) for Wapu, 2.5s for Lightning Address
   useEffect(() => {
     if (phase !== "ready" || !data) return;
+    if (!data.verify_url) return; // some LNURL providers (WoS) don't return verify
     let stopped = false;
+    const interval = method === "wapu" ? 1500 : 2500;
+
     async function poll() {
       try {
         const res = await fetch(
@@ -98,14 +124,14 @@ function CheckoutContent() {
       } catch {
         // ignore transient errors
       }
-      if (!stopped) polledRef.current = setTimeout(poll, 3000);
+      if (!stopped) polledRef.current = setTimeout(poll, interval);
     }
-    polledRef.current = setTimeout(poll, 3000);
+    polledRef.current = setTimeout(poll, interval);
     return () => {
       stopped = true;
       if (polledRef.current) clearTimeout(polledRef.current);
     };
-  }, [phase, data]);
+  }, [phase, data, method, orderId]);
 
   function copy(value: string, kind: "invoice" | "ln") {
     navigator.clipboard.writeText(value).then(() => {
@@ -114,9 +140,12 @@ function CheckoutContent() {
     });
   }
 
+  const hasBothMethods = Boolean(wapuUsername && lnAddress);
+  const verifySupported = method === "wapu" || (data && data.verify_url);
+
   return (
     <div className="page-wrap" style={{ maxWidth: 560 }}>
-      <span className="tag-pill">⚡ Checkout · Wapu Lightning</span>
+      <span className="tag-pill">⚡ Checkout</span>
       <h1
         style={{
           fontFamily: "var(--font-display)",
@@ -132,9 +161,40 @@ function CheckoutContent() {
         {productName} · ⚡ {amountSats.toLocaleString("es-AR")} sats
       </p>
 
+      {hasBothMethods && phase !== "paid" && (
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 12,
+            padding: 4,
+            marginBottom: 16,
+          }}
+        >
+          <MethodTab
+            active={method === "wapu"}
+            onClick={() => setMethod("wapu")}
+            badge="rápido"
+          >
+            🤖 Wapu
+          </MethodTab>
+          <MethodTab
+            active={method === "lightning"}
+            onClick={() => setMethod("lightning")}
+          >
+            ⚡ Lightning Address
+          </MethodTab>
+        </div>
+      )}
+
       {phase === "loading" && (
         <div className="card">
-          <p className="muted">Generando invoice via Wapu…</p>
+          <p className="muted">
+            Generando invoice via{" "}
+            {method === "wapu" ? "Wapu" : "Lightning Address"}…
+          </p>
         </div>
       )}
 
@@ -150,10 +210,17 @@ function CheckoutContent() {
           <p className="muted" style={{ fontSize: 14 }}>
             {error}
           </p>
-          <p className="muted" style={{ fontSize: 13, marginTop: 12 }}>
-            Verificá que el username del vendedor exista en Wapu, o que la env
-            var <code>WAPU_DEMO_SELLER</code> esté seteada.
-          </p>
+          {hasBothMethods && (
+            <button
+              className="btn btn-outline"
+              style={{ marginTop: 16 }}
+              onClick={() =>
+                setMethod(method === "wapu" ? "lightning" : "wapu")
+              }
+            >
+              Probar con {method === "wapu" ? "Lightning Address" : "Wapu"}
+            </button>
+          )}
         </div>
       )}
 
@@ -240,7 +307,11 @@ function CheckoutContent() {
                 animation: "pulse 1.6s ease-in-out infinite",
               }}
             />
-            Esperando confirmación on-chain Lightning…
+            {verifySupported
+              ? method === "wapu"
+                ? "Wapu confirma el pago en ~1.5s"
+                : "Esperando confirmación on-chain…"
+              : "Esta wallet no soporta auto-verify (LUD-21). Marcá manualmente cuando pagues."}
           </p>
         </>
       )}
@@ -271,8 +342,7 @@ function CheckoutContent() {
             pagada en Wapufy.
           </p>
           <p className="muted" style={{ fontSize: 13 }}>
-            En el MVP siguiente: emitimos email al cliente, descontamos stock y
-            notificamos al vendedor en su dashboard.
+            Vía {method === "wapu" ? "Wapu (LNURL-pay + LUD-21 verify)" : "Lightning Address"}.
           </p>
         </div>
       )}
@@ -280,9 +350,67 @@ function CheckoutContent() {
   );
 }
 
+function MethodTab({
+  active,
+  onClick,
+  children,
+  badge,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  badge?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1,
+        padding: "10px 14px",
+        borderRadius: 8,
+        background: active ? "var(--primary)" : "transparent",
+        color: active ? "#000" : "var(--text-secondary)",
+        border: "none",
+        fontWeight: 600,
+        fontSize: 13,
+        cursor: "pointer",
+        transition: "all .2s",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+      }}
+    >
+      {children}
+      {badge && (
+        <span
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            padding: "2px 6px",
+            borderRadius: 100,
+            background: active ? "rgba(0,0,0,0.15)" : "rgba(0,255,157,0.15)",
+            color: active ? "#000" : "#00ff9d",
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="page-wrap"><p className="muted">Cargando checkout…</p></div>}>
+    <Suspense
+      fallback={
+        <div className="page-wrap">
+          <p className="muted">Cargando checkout…</p>
+        </div>
+      }
+    >
       <CheckoutContent />
     </Suspense>
   );

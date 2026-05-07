@@ -17,7 +17,8 @@
   }
 
   var baseUrl = (cfg.baseUrl || "https://wapify.vercel.app").replace(/\/+$/, "");
-  var seller = (cfg.settings && cfg.settings.lightningAddress) || "";
+  var lnAddress = (cfg.settings && cfg.settings.lightningAddress) || "";
+  var wapuUsername = (cfg.settings && cfg.settings.wapuUsername) || "";
   var products = Array.isArray(cfg.products) ? cfg.products : [];
   var meta = cfg.meta || {};
   var theme = cfg.theme || {
@@ -102,7 +103,8 @@
       encodeURIComponent(p.price) +
       "&product=" +
       encodeURIComponent(p.name);
-    if (seller) u += "&seller=" + encodeURIComponent(seller);
+    if (lnAddress) u += "&ln=" + encodeURIComponent(lnAddress);
+    if (wapuUsername) u += "&wapu=" + encodeURIComponent(wapuUsername);
     return u;
   }
 

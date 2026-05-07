@@ -26,7 +26,10 @@ export default function ExportModal({
   const config = useMemo(
     () => ({
       products,
-      settings: { lightningAddress: settings.lightningAddress },
+      settings: {
+        lightningAddress: settings.lightningAddress,
+        wapuUsername: settings.wapuUsername,
+      },
       meta,
       baseUrl,
     }),

@@ -37,7 +37,8 @@ export default function StorePage() {
   }, [slug]);
 
   const settings = useMemo(() => (hydrated ? loadSettings() : null), [hydrated]);
-  const sellerParam = settings?.lightningAddress ?? "";
+  const lnParam = settings?.lightningAddress ?? "";
+  const wapuParam = settings?.wapuUsername ?? "";
 
   if (hydrated && !meta && !DEFAULT_META[slug]) {
     notFound();
@@ -207,9 +208,10 @@ export default function StorePage() {
 
       <div className="row">
         {products.map((p) => {
-          const checkoutUrl = `/checkout?sats=${p.price}&product=${encodeURIComponent(
-            p.name
-          )}${sellerParam ? `&seller=${encodeURIComponent(sellerParam)}` : ""}`;
+          const checkoutUrl =
+            `/checkout?sats=${p.price}&product=${encodeURIComponent(p.name)}` +
+            (lnParam ? `&ln=${encodeURIComponent(lnParam)}` : "") +
+            (wapuParam ? `&wapu=${encodeURIComponent(wapuParam)}` : "");
           return (
             <div key={p.id} className="feature-card" style={{ position: "relative" }}>
               <div style={{ position: "relative" }}>

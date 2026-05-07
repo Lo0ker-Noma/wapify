@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../components/AuthProvider";
+import ExportModal from "../components/ExportModal";
 import { Product, loadProducts } from "@/lib/products";
 import { loadSettings, StoreSettings } from "@/lib/settings";
 import { loadOrders, Order } from "@/lib/orders";
+import { loadStoreMeta, StoreMeta } from "@/lib/store-meta";
 
 export default function DashboardPage() {
   const { pubkey, isAdmin, profile, loading, logout } = useAuth();
@@ -14,6 +16,8 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [meta, setMeta] = useState<StoreMeta | null>(null);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -24,6 +28,7 @@ export default function DashboardPage() {
     setProducts(loadProducts("lacrypta"));
     setSettings(loadSettings());
     setOrders(loadOrders());
+    setMeta(loadStoreMeta("lacrypta"));
   }, [pubkey, isAdmin, loading, router]);
 
   function handleLogout() {
@@ -128,6 +133,61 @@ export default function DashboardPage() {
           gap: 16,
           flexWrap: "wrap",
           marginBottom: 32,
+          background:
+            "linear-gradient(135deg, rgba(0,255,157,0.08), rgba(153,69,255,0.06))",
+          borderColor: "rgba(0,255,157,0.2)",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <div
+            style={{
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: 1.5,
+              color: "var(--primary)",
+              fontWeight: 700,
+              marginBottom: 6,
+            }}
+          >
+            ⤓ Embed / Export
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 18,
+              fontWeight: 700,
+              marginBottom: 4,
+            }}
+          >
+            Llevá tu tienda a cualquier sitio
+          </div>
+          <p
+            className="muted"
+            style={{ fontSize: 13, margin: 0, maxWidth: 480, lineHeight: 1.5 }}
+          >
+            Exportá un snippet HTML que renderiza la tienda en cualquier web —
+            WordPress, Notion, Webflow, tu landing — y los pagos siguen
+            llegándote por Lightning.
+          </p>
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowExport(true)}
+          disabled={!products.length || !settings || !meta}
+        >
+          Exportar tienda →
+        </button>
+      </div>
+
+      <div
+        className="card"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+          marginBottom: 32,
         }}
       >
         <div>
@@ -211,6 +271,20 @@ export default function DashboardPage() {
           ⏏ Cerrar sesión
         </button>
       </div>
+
+      {showExport && settings && meta && (
+        <ExportModal
+          products={products}
+          settings={settings}
+          meta={meta}
+          baseUrl={
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "https://wapify.vercel.app"
+          }
+          onClose={() => setShowExport(false)}
+        />
+      )}
     </div>
   );
 }

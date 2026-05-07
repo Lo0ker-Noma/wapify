@@ -8,12 +8,14 @@ export default function Navbar() {
           wapufy<span className="dot">.</span>
         </Link>
         <div className="nav-links">
-          <a href="#features">Features</a>
-          <a href="#stack">Stack</a>
-          <a href="#comparison">vs Shopify</a>
+          <a href="/#build">Build</a>
+          <a href="/#sell">Sell</a>
+          <a href="/#market">Market</a>
+          <a href="/#manage">Manage</a>
+          <a href="/#pricing">Pricing</a>
           <Link href="/store/demo">Demo</Link>
           <Link href="/login" className="btn btn-primary btn-nav">
-            Login con Nostr
+            Empezar gratis
           </Link>
         </div>
       </div>

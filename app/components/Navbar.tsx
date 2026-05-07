@@ -13,7 +13,7 @@ export default function Navbar() {
           <a href="/#market">Market</a>
           <a href="/#manage">Manage</a>
           <a href="/#pricing">Pricing</a>
-          <Link href="/store/demo">Demo</Link>
+          <Link href="/store/lacrypta">Demo</Link>
           <Link href="/login" className="btn btn-primary btn-nav">
             Empezar gratis
           </Link>

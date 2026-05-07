@@ -98,7 +98,7 @@ export default function HomePage() {
               <li>Brand kit: logo, colores, hero, redes sociales</li>
               <li>Mobile-first — porque LATAM compra desde el celular</li>
             </ul>
-            <Link href="/store/demo" className="btn btn-primary">
+            <Link href="/store/lacrypta" className="btn btn-primary">
               Ver storefront demo →
             </Link>
           </div>
@@ -438,7 +438,7 @@ export default function HomePage() {
               <Link href="/login" className="btn btn-primary btn-large">
                 Conectar Nostr y crear tienda →
               </Link>
-              <Link href="/store/demo" className="btn btn-outline btn-large">
+              <Link href="/store/lacrypta" className="btn btn-outline btn-large">
                 Ver demo primero
               </Link>
             </div>

@@ -16,7 +16,7 @@ export default function Footer() {
           </div>
           <div>
             <h4>Producto</h4>
-            <Link href="/store/demo">Tienda demo</Link>
+            <Link href="/store/lacrypta">Tienda demo</Link>
             <Link href="/login">Login Nostr</Link>
             <a href="#features">Features</a>
             <a href="#comparison">vs Shopify</a>

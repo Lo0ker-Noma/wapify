@@ -84,6 +84,13 @@ const MOCK_STORES: Record<string, Store> = {
         price: 15000,
         img: "https://placehold.co/600x600/000000/9945ff/png?text=MUG",
       },
+      {
+        id: "spray-antikukas",
+        name: "Spray de Pimienta Antikukas",
+        price: 22000,
+        img: "https://placehold.co/600x600/000000/00ff9d/png?text=ANTIKUKAS",
+        tag: "🌶 Defensa P2P",
+      },
     ],
   },
 };

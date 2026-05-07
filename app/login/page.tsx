@@ -10,10 +10,10 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // If admin already logged, bounce to dashboard
+  // After login, send the user to their storefront
   useEffect(() => {
-    if (pubkey && isAdmin) router.replace("/dashboard");
-  }, [pubkey, isAdmin, router]);
+    if (pubkey) router.replace("/store/lacrypta");
+  }, [pubkey, router]);
 
   async function handle() {
     setError(null);

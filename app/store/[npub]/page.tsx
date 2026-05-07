@@ -12,54 +12,37 @@ import {
   getDefaultProducts,
 } from "@/lib/products";
 import { loadSettings } from "@/lib/settings";
-
-type StoreMeta = {
-  name: string;
-  bio: string;
-  theme?: "crypta";
-  hero?: { kicker: string; title: string; subtitle: string };
-};
-
-const STORE_META: Record<string, StoreMeta> = {
-  demo: {
-    name: "Tienda Demo",
-    bio: "Productos mock para probar el flow Wapu Lightning. El pago va a la Lightning Address configurada en Settings.",
-  },
-  lacrypta: {
-    name: "LaCrypta Apparel HDMP",
-    bio: "Drop oficial de la comunidad. Hecho en Argentina, pagado en Lightning. Sin custodia, sin intermediarios — Hodl & wear.",
-    theme: "crypta",
-    hero: {
-      kicker: "DROP 001 · HODL DON'T MISS PURPOSE",
-      title: "Apparel HDMP",
-      subtitle:
-        "La línea de ropa de la comunidad LaCrypta. Cada pieza es un manifiesto.",
-    },
-  },
-};
+import {
+  StoreMeta,
+  loadStoreMeta,
+  saveStoreMeta,
+  DEFAULT_META,
+} from "@/lib/store-meta";
 
 export default function StorePage() {
   const params = useParams<{ npub: string }>();
   const slug = params.npub;
-  const meta = STORE_META[slug];
   const { isAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [meta, setMeta] = useState<StoreMeta | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [editingMeta, setEditingMeta] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setProducts(loadProducts(slug));
+    setMeta(loadStoreMeta(slug));
     setHydrated(true);
   }, [slug]);
 
   const settings = useMemo(() => (hydrated ? loadSettings() : null), [hydrated]);
   const sellerParam = settings?.lightningAddress ?? "";
 
-  if (!meta) {
+  if (hydrated && !meta && !DEFAULT_META[slug]) {
     notFound();
   }
 
-  const isCrypta = meta!.theme === "crypta";
+  const isCrypta = slug === "lacrypta";
   const canEdit = isAdmin && slug === "lacrypta";
 
   function updateProduct(updated: Product) {
@@ -69,6 +52,7 @@ export default function StorePage() {
   }
 
   function removeProduct(id: string) {
+    if (!confirm("¿Eliminar este producto?")) return;
     const next = products.filter((p) => p.id !== id);
     setProducts(next);
     saveProducts(slug, next);
@@ -95,10 +79,24 @@ export default function StorePage() {
     setProducts(getDefaultProducts(slug));
   }
 
+  function saveMetaEdit(next: StoreMeta) {
+    setMeta(next);
+    saveStoreMeta(slug, next);
+    setEditingMeta(false);
+  }
+
+  if (!hydrated || !meta) {
+    return (
+      <div className="page-wrap">
+        <p className="muted">Cargando…</p>
+      </div>
+    );
+  }
+
   return (
     <div className={`page-wrap ${isCrypta ? "theme-crypta" : ""}`}>
-      {isCrypta && meta!.hero ? (
-        <div className="crypta-hero">
+      {isCrypta ? (
+        <div className="crypta-hero" style={{ position: "relative" }}>
           <span className="crypta-logo">▲ LACRYPTA</span>
           <h1
             style={{
@@ -110,7 +108,7 @@ export default function StorePage() {
               marginBottom: 16,
             }}
           >
-            {meta!.hero.title}
+            {meta.heroTitle ?? meta.name}
           </h1>
           <p
             style={{
@@ -120,7 +118,7 @@ export default function StorePage() {
               marginBottom: 18,
             }}
           >
-            {meta!.hero.subtitle}
+            {meta.heroSubtitle ?? meta.bio}
           </p>
           <p
             style={{
@@ -131,8 +129,29 @@ export default function StorePage() {
               opacity: 0.8,
             }}
           >
-            {meta!.hero.kicker}
+            {meta.heroKicker}
           </p>
+          {canEdit && (
+            <button
+              onClick={() => setEditingMeta(true)}
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                background: "rgba(0,0,0,0.6)",
+                border: "1px solid var(--primary)",
+                color: "var(--primary)",
+                padding: "8px 14px",
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              ✎ Editar título
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -147,17 +166,17 @@ export default function StorePage() {
               marginBottom: 12,
             }}
           >
-            {meta!.name}
+            {meta.name}
           </h1>
           <p className="muted" style={{ fontSize: 17, marginBottom: 48, maxWidth: 640 }}>
-            {meta!.bio}
+            {meta.bio}
           </p>
         </>
       )}
 
       {isCrypta && (
         <p className="muted" style={{ fontSize: 15, marginBottom: 24, maxWidth: 640 }}>
-          {meta!.bio}
+          {meta.bio}
         </p>
       )}
 
@@ -176,6 +195,9 @@ export default function StorePage() {
           <button className="btn btn-outline" onClick={resetAll}>
             ↺ Restaurar por defecto
           </button>
+          <Link href="/dashboard" className="btn btn-outline">
+            ◧ Dashboard
+          </Link>
           <Link href="/settings" className="btn btn-outline">
             ⚙ Settings
           </Link>
@@ -317,7 +339,7 @@ export default function StorePage() {
       </div>
 
       {editing && (
-        <EditModal
+        <ProductModal
           product={editing}
           onClose={() => setEditing(null)}
           onSave={(p) => {
@@ -326,11 +348,19 @@ export default function StorePage() {
           }}
         />
       )}
+
+      {editingMeta && (
+        <MetaModal
+          meta={meta}
+          onClose={() => setEditingMeta(false)}
+          onSave={saveMetaEdit}
+        />
+      )}
     </div>
   );
 }
 
-function EditModal({
+function ProductModal({
   product,
   onClose,
   onSave,
@@ -341,6 +371,133 @@ function EditModal({
 }) {
   const [draft, setDraft] = useState<Product>(product);
 
+  return (
+    <ModalShell onClose={onClose} title="Editar producto">
+      <Field label="Título">
+        <input
+          className="wapu-input"
+          value={draft.name}
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+        />
+      </Field>
+      <Field label="Subtítulo / eslogan">
+        <input
+          className="wapu-input"
+          value={draft.subtitle ?? ""}
+          onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}
+        />
+      </Field>
+      <Field label="URL de imagen">
+        <input
+          className="wapu-input"
+          value={draft.img}
+          onChange={(e) => setDraft({ ...draft, img: e.target.value })}
+        />
+      </Field>
+      <Field label="Precio (sats)">
+        <input
+          className="wapu-input"
+          type="number"
+          min={1}
+          value={draft.price}
+          onChange={(e) =>
+            setDraft({ ...draft, price: Number(e.target.value) || 0 })
+          }
+        />
+      </Field>
+      <Field label="Tag (opcional)">
+        <input
+          className="wapu-input"
+          value={draft.tag ?? ""}
+          onChange={(e) => setDraft({ ...draft, tag: e.target.value })}
+          placeholder="Ej: ★ Más vendida"
+        />
+      </Field>
+
+      {draft.img && (
+        <img
+          src={draft.img}
+          alt="preview"
+          style={{
+            width: "100%",
+            aspectRatio: "1 / 1",
+            objectFit: "cover",
+            borderRadius: 10,
+            marginTop: 8,
+            marginBottom: 16,
+          }}
+        />
+      )}
+
+      <ModalActions onCancel={onClose} onSave={() => onSave(draft)} />
+    </ModalShell>
+  );
+}
+
+function MetaModal({
+  meta,
+  onClose,
+  onSave,
+}: {
+  meta: StoreMeta;
+  onClose: () => void;
+  onSave: (m: StoreMeta) => void;
+}) {
+  const [draft, setDraft] = useState<StoreMeta>(meta);
+
+  return (
+    <ModalShell onClose={onClose} title="Editar título de tienda">
+      <Field label="Nombre / título principal">
+        <input
+          className="wapu-input"
+          value={draft.heroTitle ?? draft.name}
+          onChange={(e) => setDraft({ ...draft, heroTitle: e.target.value })}
+        />
+      </Field>
+      <Field label="Subtítulo (descripción corta)">
+        <input
+          className="wapu-input"
+          value={draft.heroSubtitle ?? ""}
+          onChange={(e) => setDraft({ ...draft, heroSubtitle: e.target.value })}
+        />
+      </Field>
+      <Field label="Kicker (línea mono superior)">
+        <input
+          className="wapu-input"
+          value={draft.heroKicker ?? ""}
+          onChange={(e) => setDraft({ ...draft, heroKicker: e.target.value })}
+        />
+      </Field>
+      <Field label="Bio / descripción larga">
+        <textarea
+          className="wapu-input"
+          rows={3}
+          value={draft.bio}
+          onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
+        />
+      </Field>
+      <Field label="Nombre interno de tienda">
+        <input
+          className="wapu-input"
+          value={draft.name}
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+        />
+      </Field>
+
+      <ModalActions onCancel={onClose} onSave={() => onSave(draft)} />
+    </ModalShell>
+  );
+}
+
+function ModalShell({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <div
       onClick={onClose}
@@ -365,6 +522,8 @@ function EditModal({
           padding: 28,
           width: "100%",
           maxWidth: 480,
+          maxHeight: "90vh",
+          overflowY: "auto",
         }}
       >
         <h3
@@ -374,77 +533,29 @@ function EditModal({
             marginBottom: 20,
           }}
         >
-          Editar producto
+          {title}
         </h3>
-
-        <Field label="Título">
-          <input
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          />
-        </Field>
-        <Field label="Subtítulo / eslogan">
-          <input
-            value={draft.subtitle ?? ""}
-            onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}
-          />
-        </Field>
-        <Field label="URL de imagen">
-          <input
-            value={draft.img}
-            onChange={(e) => setDraft({ ...draft, img: e.target.value })}
-          />
-        </Field>
-        <Field label="Precio (sats)">
-          <input
-            type="number"
-            min={1}
-            value={draft.price}
-            onChange={(e) =>
-              setDraft({ ...draft, price: Number(e.target.value) || 0 })
-            }
-          />
-        </Field>
-        <Field label="Tag (opcional)">
-          <input
-            value={draft.tag ?? ""}
-            onChange={(e) => setDraft({ ...draft, tag: e.target.value })}
-            placeholder="Ej: ★ Más vendida"
-          />
-        </Field>
-
-        {draft.img && (
-          <img
-            src={draft.img}
-            alt="preview"
-            style={{
-              width: "100%",
-              aspectRatio: "1 / 1",
-              objectFit: "cover",
-              borderRadius: 10,
-              marginTop: 8,
-              marginBottom: 16,
-            }}
-          />
-        )}
-
-        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-          <button
-            className="btn btn-outline"
-            onClick={onClose}
-            style={{ flex: 1 }}
-          >
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => onSave(draft)}
-            style={{ flex: 1 }}
-          >
-            Guardar
-          </button>
-        </div>
+        {children}
       </div>
+    </div>
+  );
+}
+
+function ModalActions({
+  onCancel,
+  onSave,
+}: {
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+      <button className="btn btn-outline" onClick={onCancel} style={{ flex: 1 }}>
+        Cancelar
+      </button>
+      <button className="btn btn-primary" onClick={onSave} style={{ flex: 1 }}>
+        Guardar
+      </button>
     </div>
   );
 }
@@ -471,7 +582,7 @@ function Field({
       >
         {label}
       </span>
-      <span className="form-input-wrap">{children}</span>
+      {children}
     </label>
   );
 }

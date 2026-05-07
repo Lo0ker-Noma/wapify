@@ -6,12 +6,14 @@ import Link from "next/link";
 import { useAuth } from "../components/AuthProvider";
 import { Product, loadProducts } from "@/lib/products";
 import { loadSettings, StoreSettings } from "@/lib/settings";
+import { loadOrders, Order } from "@/lib/orders";
 
 export default function DashboardPage() {
-  const { pubkey, isAdmin, profile, loading } = useAuth();
+  const { pubkey, isAdmin, profile, loading, logout } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     if (loading) return;
@@ -21,7 +23,13 @@ export default function DashboardPage() {
     }
     setProducts(loadProducts("lacrypta"));
     setSettings(loadSettings());
+    setOrders(loadOrders());
   }, [pubkey, isAdmin, loading, router]);
+
+  function handleLogout() {
+    logout();
+    router.replace("/");
+  }
 
   if (!pubkey || !isAdmin) {
     return (
@@ -31,7 +39,8 @@ export default function DashboardPage() {
     );
   }
 
-  const totalSats = products.reduce((acc, p) => acc + p.price, 0);
+  const paid = orders.filter((o) => o.status === "paid");
+  const totalSatsRecv = paid.reduce((acc, o) => acc + o.amountSats, 0);
 
   return (
     <div className="page-wrap theme-crypta">
@@ -48,8 +57,8 @@ export default function DashboardPage() {
             src={profile.picture}
             alt="avatar"
             style={{
-              width: 56,
-              height: 56,
+              width: 64,
+              height: 64,
               borderRadius: "50%",
               border: "2px solid var(--primary)",
               boxShadow: "0 0 20px var(--primary-glow)",
@@ -76,53 +85,82 @@ export default function DashboardPage() {
       </div>
 
       <p className="muted" style={{ fontSize: 16, marginBottom: 32, maxWidth: 640 }}>
-        Panel de tu tienda LaCrypta Apparel HDMP. Editá productos, configurá tus
-        métodos de cobro y revisá el estado de tu storefront.
+        Panel de tu tienda. Editá productos y el título, configurá tu cobro
+        Lightning, revisá pedidos.
       </p>
 
-      <div className="row" style={{ marginBottom: 40 }}>
-        <Stat label="Productos activos" value={products.length.toString()} />
-        <Stat label="Total catálogo" value={`⚡ ${totalSats} sats`} />
-        <Stat
-          label="Lightning Address"
-          value={settings?.lightningAddress ?? "—"}
-          mono
-        />
+      <div className="row" style={{ marginBottom: 32 }}>
+        <Stat label="Productos" value={products.length.toString()} />
+        <Stat label="Pedidos pagados" value={paid.length.toString()} />
+        <Stat label="Sats recibidos" value={`⚡ ${totalSatsRecv}`} mono />
       </div>
 
-      <div className="row" style={{ marginBottom: 40 }}>
+      <div className="row" style={{ marginBottom: 32 }}>
         <ActionCard
+          icon="◇"
           title="Mi tienda"
-          desc="Ver storefront público y editar productos in-place."
+          desc="Storefront público. Editá título y productos in-place."
           href="/store/lacrypta"
           cta="Abrir tienda →"
         />
         <ActionCard
+          icon="📑"
+          title="Pedidos"
+          desc="Historial de invoices Lightning recibidos en tu Lightning Address."
+          href="/pedidos"
+          cta={`Ver ${orders.length} pedido${orders.length === 1 ? "" : "s"} →`}
+        />
+        <ActionCard
+          icon="⚙"
           title="Settings"
-          desc="Configurá tu Lightning Address y tu Wapu username para recibir pagos."
+          desc="Configurá tu Lightning Address, usuario Wapu y métodos de cobro."
           href="/settings"
           cta="Configurar →"
         />
-        <ActionCard
-          title="Identidad Nostr"
-          desc="Tu npub es tu cuenta. Editá tu kind:0 desde tu cliente Nostr (Damus, Amethyst…)."
-          href="/login"
-          cta="Ver perfil"
-        />
+      </div>
+
+      <div
+        className="card"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+          marginBottom: 32,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+            Cobro actual
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--primary)",
+              fontSize: 14,
+            }}
+          >
+            ⚡ {settings?.lightningAddress ?? "—"}
+          </div>
+        </div>
+        <Link href="/settings" className="btn btn-outline">
+          Cambiar
+        </Link>
       </div>
 
       <h2
         style={{
           fontFamily: "var(--font-display)",
-          fontSize: 26,
+          fontSize: 24,
           fontWeight: 700,
           marginBottom: 16,
           letterSpacing: "-0.5px",
         }}
       >
-        Productos
+        Productos en catálogo
       </h2>
-      <div className="row">
+      <div className="row" style={{ marginBottom: 40 }}>
         {products.map((p) => (
           <Link
             key={p.id}
@@ -156,6 +194,23 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          paddingTop: 20,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <button
+          onClick={handleLogout}
+          className="btn btn-outline"
+          style={{ borderColor: "rgba(248,113,113,0.4)", color: "#f87171" }}
+        >
+          ⏏ Cerrar sesión
+        </button>
+      </div>
     </div>
   );
 }
@@ -172,9 +227,7 @@ function Stat({
   return (
     <div
       className="feature-card"
-      style={{
-        background: "rgba(255,255,255,0.02)",
-      }}
+      style={{ background: "rgba(255,255,255,0.02)" }}
     >
       <div
         style={{
@@ -191,7 +244,7 @@ function Stat({
       <div
         style={{
           fontFamily: mono ? "var(--font-mono)" : "var(--font-display)",
-          fontSize: mono ? 15 : 28,
+          fontSize: mono ? 24 : 28,
           fontWeight: 700,
           color: "var(--text)",
           wordBreak: "break-all",
@@ -204,11 +257,13 @@ function Stat({
 }
 
 function ActionCard({
+  icon,
   title,
   desc,
   href,
   cta,
 }: {
+  icon: string;
   title: string;
   desc: string;
   href: string;
@@ -216,6 +271,15 @@ function ActionCard({
 }) {
   return (
     <Link href={href} className="feature-card" style={{ textDecoration: "none" }}>
+      <div
+        style={{
+          fontSize: 28,
+          marginBottom: 8,
+          color: "var(--primary)",
+        }}
+      >
+        {icon}
+      </div>
       <h3
         style={{
           fontFamily: "var(--font-display)",

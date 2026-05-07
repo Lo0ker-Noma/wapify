@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
+import { recordOrder, markOrderPaid } from "@/lib/orders";
 
 type CheckoutData = {
   invoice: string;
@@ -25,6 +26,7 @@ function CheckoutContent() {
   const [data, setData] = useState<CheckoutData | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState<"invoice" | "ln" | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const polledRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. Pedir invoice al cargar
@@ -53,6 +55,14 @@ function CheckoutContent() {
         if (cancelled) return;
         setQr(dataUrl);
         setPhase("ready");
+        const order = recordOrder({
+          productName,
+          amountSats: json.amount_sat,
+          invoice: json.invoice,
+          verifyUrl: json.verify_url,
+          lnAddress: json.ln_address,
+        });
+        setOrderId(order.id);
       } catch (e: any) {
         if (cancelled) return;
         setError(e?.message ?? "Error desconocido");
@@ -81,6 +91,7 @@ function CheckoutContent() {
         const json = await res.json();
         if (stopped) return;
         if (json.settled) {
+          if (orderId) markOrderPaid(orderId);
           setPhase("paid");
           return;
         }

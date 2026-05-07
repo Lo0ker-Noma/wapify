@@ -1,10 +1,33 @@
 import type { Metadata } from "next";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+  weight: ["500", "600", "700"],
+});
 
 export const metadata: Metadata = {
-  title: "Wapufy — Shopify + Wapu, login con Nostr",
+  title: "Wapufy — Tu tienda online con Nostr y pagos P2P",
   description:
-    "eCommerce minimalista para LATAM. Pagos P2P con Wapu, login con tu npub via NIP-07.",
+    "Vendé sin permiso. La alternativa a Shopify para LATAM: login con tu npub (NIP-07), pagos P2P con Wapu, sin cuotas mensuales.",
+  metadataBase: new URL("https://wapufy.vercel.app"),
+  openGraph: {
+    title: "Wapufy — Tu tienda online con Nostr",
+    description:
+      "Vendé sin permiso. Login con Nostr, pagos P2P con Wapu, sin cuotas.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -13,8 +36,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
-      <body>{children}</body>
+    <html lang="es" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <body>
+        <Navbar />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

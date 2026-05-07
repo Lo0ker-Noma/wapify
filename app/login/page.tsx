@@ -39,7 +39,6 @@ export default function LoginPage() {
         );
       }
       const pk = await window.nostr.getPublicKey();
-      // Challenge style (NIP-42-ish): firmamos un evento ephemero con timestamp
       const challenge = await window.nostr.signEvent({
         kind: 22242,
         created_at: Math.floor(Date.now() / 1000),
@@ -49,7 +48,6 @@ export default function LoginPage() {
         ],
         content: "Wapufy login",
       });
-      // TODO: POST challenge → /api/auth/nostr/verify para obtener cookie de sesión
       console.log("Signed challenge", challenge);
       setPubkey(pk);
     } catch (e: any) {
@@ -60,47 +58,127 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container">
-      <h1>Login</h1>
-      <p className="muted">
-        Wapufy usa <strong>Nostr (NIP-07)</strong>. Tu npub es tu identidad —
-        nada de emails ni contraseñas.
+    <div className="page-wrap" style={{ maxWidth: 640 }}>
+      <span className="tag-pill">🔑 Auth con Nostr · NIP-07</span>
+      <h1
+        style={{
+          fontFamily: "var(--font-display)",
+          fontSize: "clamp(36px, 6vw, 56px)",
+          fontWeight: 700,
+          letterSpacing: "-1.5px",
+          lineHeight: 1.05,
+          marginBottom: 16,
+        }}
+      >
+        Tu npub es tu cuenta.
+      </h1>
+      <p
+        className="muted"
+        style={{ fontSize: 17, marginBottom: 32, maxWidth: 520 }}
+      >
+        Wapufy nunca toca tu llave privada. Solo te pide firmar un challenge
+        efímero (kind:22242) para probar que sos vos.
       </p>
 
-      <div className="card" style={{ marginTop: "1.5rem" }}>
+      <div className="card">
         {!pubkey ? (
           <>
-            <h3 style={{ marginTop: 0 }}>Conectar extensión Nostr</h3>
-            <p className="muted">
-              Necesitas una extensión NIP-07 instalada (Alby, nos2x, Flamingo).
-              Wapufy pedirá tu pubkey y una firma de challenge.
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 22,
+                fontWeight: 600,
+                marginBottom: 12,
+              }}
+            >
+              Conectar extensión Nostr
+            </h3>
+            <p className="muted" style={{ marginBottom: 24, fontSize: 15 }}>
+              Necesitás una extensión NIP-07 instalada{" "}
+              <a
+                href="https://getalby.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--primary)" }}
+              >
+                Alby
+              </a>
+              ,{" "}
+              <a
+                href="https://github.com/fiatjaf/nos2x"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--primary)" }}
+              >
+                nos2x
+              </a>{" "}
+              o Flamingo. Wapufy pedirá tu pubkey y una firma de challenge.
             </p>
-            <button onClick={handleNostrLogin} disabled={loading}>
-              {loading ? "Esperando firma…" : "Login con Nostr"}
+            <button
+              className="btn btn-primary btn-large btn-block"
+              onClick={handleNostrLogin}
+              disabled={loading}
+            >
+              {loading ? "Esperando firma…" : "Login con Nostr →"}
             </button>
             {error && (
-              <p style={{ color: "#f87171", marginTop: "1rem" }}>{error}</p>
+              <p
+                style={{
+                  color: "#f87171",
+                  marginTop: 16,
+                  fontSize: 14,
+                  background: "rgba(248,113,113,0.08)",
+                  border: "1px solid rgba(248,113,113,0.2)",
+                  padding: 12,
+                  borderRadius: 8,
+                }}
+              >
+                {error}
+              </p>
             )}
           </>
         ) : (
           <>
-            <h3 style={{ marginTop: 0 }}>✅ Conectado</h3>
-            <p>
-              <strong>npub:</strong>{" "}
-              <code style={{ wordBreak: "break-all" }}>{pubkey}</code>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 22,
+                fontWeight: 600,
+                marginBottom: 12,
+                color: "var(--primary)",
+              }}
+            >
+              ✓ Conectado
+            </h3>
+            <p style={{ marginBottom: 8, fontSize: 14 }}>
+              <strong>npub:</strong>
             </p>
-            <p className="muted">
-              Próximo paso: el backend verificará la firma del challenge y
-              devolverá una cookie de sesión.
+            <code style={{ wordBreak: "break-all", display: "block", padding: 12, marginBottom: 20 }}>
+              {pubkey}
+            </code>
+            <p className="muted" style={{ fontSize: 14 }}>
+              Próximo paso: el backend verifica la firma del challenge y
+              devuelve una cookie de sesión. (TODO en este MVP.)
             </p>
           </>
         )}
       </div>
 
-      <p className="muted" style={{ marginTop: "1.5rem", fontSize: "0.9rem" }}>
-        ¿Sin extensión? Pronto soportaremos NIP-46 (remote signer) y nsec
-        bunker para móviles.
+      <p
+        className="muted"
+        style={{ marginTop: 24, fontSize: 13, textAlign: "center" }}
+      >
+        ¿Sin extensión? Próximamente soportamos{" "}
+        <a
+          href="https://nips.nostr.com/46"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "var(--primary)" }}
+        >
+          NIP-46
+        </a>{" "}
+        (remote signer) y nsec bunker para móviles.
       </p>
-    </main>
+    </div>
   );
 }

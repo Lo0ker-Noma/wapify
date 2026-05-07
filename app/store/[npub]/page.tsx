@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import { useAuth } from "@/app/components/AuthProvider";
 import {
   Product,
@@ -370,6 +371,25 @@ function ProductModal({
   onSave: (p: Product) => void;
 }) {
   const [draft, setDraft] = useState<Product>(product);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File) {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      setDraft((d) => ({ ...d, img: blob.url }));
+    } catch (e: any) {
+      setUploadError(e?.message ?? "Error subiendo imagen");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <ModalShell onClose={onClose} title="Editar producto">
@@ -387,12 +407,48 @@ function ProductModal({
           onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}
         />
       </Field>
-      <Field label="URL de imagen">
+      <Field label="Imagen">
         <input
           className="wapu-input"
           value={draft.img}
           onChange={(e) => setDraft({ ...draft, img: e.target.value })}
+          placeholder="URL pública o subí un archivo"
         />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="btn btn-outline"
+          style={{
+            marginTop: 8,
+            width: "100%",
+            cursor: uploading ? "wait" : "pointer",
+          }}
+        >
+          {uploading ? "Subiendo a Vercel Blob…" : "📷 Subir imagen (Vercel Blob)"}
+        </button>
+        {uploadError && (
+          <p
+            style={{
+              color: "#f87171",
+              fontSize: 12,
+              marginTop: 6,
+            }}
+          >
+            {uploadError}
+          </p>
+        )}
       </Field>
       <Field label="Precio (sats)">
         <input

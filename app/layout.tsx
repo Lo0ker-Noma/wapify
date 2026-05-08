@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { AuthProvider } from "./components/AuthProvider";
+import { CartProvider } from "./components/CartProvider";
 
 export const metadata: Metadata = {
   title: "Wapufy — Tu tienda online con Nostr y pagos P2P",
@@ -26,9 +27,11 @@ export default function RootLayout({
     <html lang="es">
       <body>
         <AuthProvider>
-          <Navbar />
-          {children}
-          <Footer />
+          <CartProvider>
+            <Navbar />
+            {children}
+            <Footer />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

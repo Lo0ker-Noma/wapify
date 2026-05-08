@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Product } from "@/lib/products";
 import CheckoutPanel from "./CheckoutPanel";
+import { useCart } from "./CartProvider";
 
 export default function ProductDetailModal({
   product,
@@ -15,6 +17,25 @@ export default function ProductDetailModal({
   wapuUsername?: string;
   onClose: () => void;
 }) {
+  const { add } = useCart();
+  const router = useRouter();
+  const [mode, setMode] = useState<"buy" | "added">("buy");
+  const [showCheckout, setShowCheckout] = useState(false);
+
+  function handleAdd() {
+    add(
+      {
+        id: product.id,
+        name: product.name,
+        subtitle: product.subtitle,
+        img: product.img,
+        price: product.price,
+      },
+      1
+    );
+    setMode("added");
+    setTimeout(() => setMode("buy"), 1500);
+  }
   // Lock body scroll while modal is open
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -153,13 +174,67 @@ export default function ProductDetailModal({
               ⚡ {product.price.toLocaleString("es-AR")} sats
             </div>
 
-            <CheckoutPanel
-              amountSats={product.price}
-              productName={product.name}
-              lnAddress={lnAddress}
-              wapuUsername={wapuUsername}
-              compact
-            />
+            {!showCheckout ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  className="btn btn-primary btn-block"
+                  onClick={handleAdd}
+                  style={{ fontSize: 15, padding: "14px 18px" }}
+                >
+                  {mode === "added" ? "✓ Agregado al carrito" : "🛒 Agregar al carrito"}
+                </button>
+                <button
+                  className="btn btn-outline btn-block"
+                  onClick={() => {
+                    add(
+                      {
+                        id: product.id,
+                        name: product.name,
+                        subtitle: product.subtitle,
+                        img: product.img,
+                        price: product.price,
+                      },
+                      1
+                    );
+                    onClose();
+                    router.push("/cart");
+                  }}
+                >
+                  Comprar ahora →
+                </button>
+                <button
+                  className="btn btn-outline btn-block"
+                  onClick={() => setShowCheckout(true)}
+                  style={{ borderStyle: "dashed", fontSize: 13 }}
+                >
+                  Pago directo (sin envío)
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowCheckout(false)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--text-secondary)",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    marginBottom: 8,
+                    padding: 0,
+                  }}
+                >
+                  ← Volver
+                </button>
+                <CheckoutPanel
+                  amountSats={product.price}
+                  productName={product.name}
+                  lnAddress={lnAddress}
+                  wapuUsername={wapuUsername}
+                  compact
+                />
+              </>
+            )}
           </div>
         </div>
       </div>

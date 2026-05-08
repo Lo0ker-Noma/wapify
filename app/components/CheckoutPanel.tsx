@@ -231,13 +231,26 @@ export default function CheckoutPanel({
             style={{
               marginTop: 10,
               fontSize: 12,
-              fontFamily: "var(--font-mono)",
               color: "var(--text-secondary)",
               textAlign: "center",
             }}
           >
-            ⚡{" "}
-            <strong style={{ color: "var(--primary)" }}>{data.ln_address}</strong>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 10px",
+                borderRadius: 100,
+                background: "rgba(0,255,157,0.08)",
+                border: "1px solid rgba(0,255,157,0.2)",
+                color: "var(--primary)",
+                fontWeight: 600,
+                letterSpacing: 0.5,
+              }}
+            >
+              ⚡ {method === "wapu" ? "Wapu Lightning" : "Lightning verificado"}
+            </span>
           </p>
 
           <button
@@ -253,13 +266,6 @@ export default function CheckoutPanel({
             style={{ marginTop: 8 }}
           >
             {copied === "invoice" ? "✓ Invoice copiado" : "Copiar invoice"}
-          </button>
-          <button
-            className="btn btn-outline btn-block"
-            onClick={() => copy(data.ln_address, "ln")}
-            style={{ marginTop: 8 }}
-          >
-            {copied === "ln" ? "✓ LN copiado" : `Copiar ${data.ln_address}`}
           </button>
 
           <p
@@ -313,8 +319,8 @@ export default function CheckoutPanel({
             ✓ Pago confirmado ⚡
           </h3>
           <p style={{ fontSize: 14, marginBottom: 6 }}>
-            Recibimos {data.amount_sat.toLocaleString()} sats en{" "}
-            <strong>{data.ln_address}</strong>.
+            Recibimos {data.amount_sat.toLocaleString()} sats. Tu pedido quedó
+            confirmado.
           </p>
           <p className="muted" style={{ fontSize: 12, margin: 0 }}>
             Vía {method === "wapu" ? "Wapu (LUD-21 verify)" : "Lightning Address"}.

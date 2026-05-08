@@ -12,6 +12,11 @@ import {
 } from "@/lib/settings";
 import { isLightningAddress } from "@/lib/lnurl";
 
+const WAPU_DEFAULT_BASES = [
+  { value: "https://be-stage.wapu.app", label: "Staging (be-stage.wapu.app)" },
+  { value: "https://be-prod.wapu.app", label: "Production (be-prod.wapu.app)" },
+];
+
 export default function SettingsPage() {
   const { pubkey, isAdmin, loading } = useAuth();
   const router = useRouter();
@@ -19,6 +24,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -133,6 +139,92 @@ export default function SettingsPage() {
             Volver al Dashboard
           </Link>
         </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 20,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
+          🤖 Integración Wapu (sponsor)
+        </h3>
+        <p className="muted" style={{ fontSize: 13, marginBottom: 16 }}>
+          Wapu es el sponsor del hackathon y procesa pagos ARS↔crypto. La API
+          Key te da acceso server-to-server (rate limit 60 req/60s).{" "}
+          <a
+            href="https://wapu.shiafu.com/api-docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--primary)" }}
+          >
+            Docs API
+          </a>
+          {" · "}
+          <a
+            href="https://github.com/wapu-app/wapu-cli"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--primary)" }}
+          >
+            wapu-cli
+          </a>
+          .
+        </p>
+
+        <Field label="Endpoint Wapu">
+          <select
+            className="wapu-input"
+            value={settings.wapuApiBase ?? WAPU_DEFAULT_BASES[0].value}
+            onChange={(e) =>
+              setSettings({ ...settings, wapuApiBase: e.target.value })
+            }
+            style={{ appearance: "auto" as any }}
+          >
+            {WAPU_DEFAULT_BASES.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="API Key (X-API-Key) — opcional">
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              className="wapu-input"
+              type={showApiKey ? "text" : "password"}
+              value={settings.wapuApiKey ?? ""}
+              onChange={(e) =>
+                setSettings({ ...settings, wapuApiKey: e.target.value.trim() })
+              }
+              placeholder="Generala con POST /users/api-token o vía wapu-cli"
+              autoComplete="off"
+              spellCheck={false}
+              style={{ flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey((v) => !v)}
+              className="btn btn-outline"
+              style={{ padding: "0 14px" }}
+            >
+              {showApiKey ? "Ocultar" : "Mostrar"}
+            </button>
+          </div>
+          <p
+            className="muted"
+            style={{ fontSize: 12, marginTop: 8, lineHeight: 1.5 }}
+          >
+            Sólo necesaria para flows server-to-server (crear transacciones,
+            consultar saldo, etc). El checkout LNURL-pay público no la requiere.
+            La API Key se guarda en localStorage de tu device — nunca sale a un
+            servidor de terceros.
+          </p>
+        </Field>
       </div>
 
       <div

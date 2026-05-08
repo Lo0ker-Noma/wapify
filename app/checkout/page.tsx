@@ -6,9 +6,14 @@ import CheckoutPanel from "../components/CheckoutPanel";
 
 function CheckoutContent() {
   const params = useSearchParams();
-  const amountSats = Number(params.get("sats") ?? "0");
+  // Accept ?sats= (current) or legacy ?amount= as a sats value
+  const amountSats = Number(params.get("sats") ?? params.get("amount") ?? "0");
   const productName = params.get("product") ?? "Compra";
-  const lnAddress = params.get("ln") ?? params.get("seller") ?? "";
+  // If no seller is given, fall back to a public default so legacy URLs still work
+  const lnAddress =
+    params.get("ln") ??
+    params.get("seller") ??
+    "savvyutensil489@walletofsatoshi.com";
   const wapuUsername = params.get("wapu") ?? "";
 
   return (

@@ -101,7 +101,21 @@ export default function StorePage() {
     <div className={`page-wrap ${isCrypta ? "theme-crypta" : ""}`}>
       {isCrypta ? (
         <div className="crypta-hero" style={{ position: "relative" }}>
-          <span className="crypta-logo">▲ LACRYPTA</span>
+          {meta.logo ? (
+            <img
+              src={meta.logo}
+              alt={meta.name}
+              style={{
+                maxHeight: 64,
+                width: "auto",
+                marginBottom: 18,
+                borderRadius: 8,
+                display: "block",
+              }}
+            />
+          ) : (
+            <span className="crypta-logo">▲ LACRYPTA</span>
+          )}
           <h1
             style={{
               fontFamily: "var(--font-display)",
@@ -179,9 +193,37 @@ export default function StorePage() {
       )}
 
       {isCrypta && (
-        <p className="muted" style={{ fontSize: 15, marginBottom: 24, maxWidth: 640 }}>
-          {meta.bio}
-        </p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 10,
+            marginBottom: 24,
+            maxWidth: 720,
+          }}
+        >
+          <p className="muted" style={{ fontSize: 15, margin: 0, flex: 1 }}>
+            {meta.bio}
+          </p>
+          {canEdit && (
+            <button
+              onClick={() => setEditingMeta(true)}
+              style={{
+                background: "transparent",
+                border: "1px solid var(--primary)",
+                color: "var(--primary)",
+                padding: "6px 10px",
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              ✎ Descripción
+            </button>
+          )}
+        </div>
       )}
 
       {canEdit && (
@@ -538,9 +580,95 @@ function MetaModal({
   onSave: (m: StoreMeta) => void;
 }) {
   const [draft, setDraft] = useState<StoreMeta>(meta);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleLogoFile(file: File) {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      setDraft((d) => ({ ...d, logo: blob.url }));
+    } catch (e: any) {
+      const msg = e?.message ?? "Error subiendo logo";
+      if (msg.includes("client token")) {
+        setUploadError(
+          "Vercel Blob no está configurado. En el Vercel Dashboard: Storage → Create Database → Blob → conectalo al proyecto."
+        );
+      } else {
+        setUploadError(msg);
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <ModalShell onClose={onClose} title="Editar título de tienda">
+      <Field label="Logo de la tienda">
+        {draft.logo && (
+          <img
+            src={draft.logo}
+            alt="logo"
+            style={{
+              maxHeight: 72,
+              width: "auto",
+              borderRadius: 8,
+              marginBottom: 10,
+              display: "block",
+            }}
+          />
+        )}
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleLogoFile(f);
+            if (logoInputRef.current) logoInputRef.current.value = "";
+          }}
+        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => logoInputRef.current?.click()}
+            disabled={uploading}
+            className="btn btn-outline"
+            style={{ flex: 1, cursor: uploading ? "wait" : "pointer" }}
+          >
+            {uploading ? "Subiendo…" : draft.logo ? "📷 Cambiar logo" : "📷 Subir logo"}
+          </button>
+          {draft.logo && (
+            <button
+              type="button"
+              onClick={() => setDraft({ ...draft, logo: "" })}
+              className="btn btn-outline"
+              style={{ borderColor: "rgba(248,113,113,0.4)", color: "#f87171" }}
+            >
+              Quitar
+            </button>
+          )}
+        </div>
+        <input
+          className="wapu-input"
+          value={draft.logo ?? ""}
+          onChange={(e) => setDraft({ ...draft, logo: e.target.value })}
+          placeholder="o pegá una URL"
+          style={{ marginTop: 8 }}
+        />
+        {uploadError && (
+          <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>
+            {uploadError}
+          </p>
+        )}
+      </Field>
+
       <Field label="Nombre / título principal">
         <input
           className="wapu-input"

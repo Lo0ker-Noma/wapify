@@ -6,6 +6,7 @@ export type StoreMeta = {
   heroTitle?: string;
   heroSubtitle?: string;
   heroKicker?: string;
+  logo?: string;
 };
 
 const KEY_PREFIX = "wapufy:storemeta:";
@@ -17,7 +18,7 @@ export const DEFAULT_META: Record<string, StoreMeta> = {
   },
   lacrypta: {
     name: "LaCrypta Apparel HDMP",
-    bio: "Drop oficial de la comunidad. Hecho en Argentina, pagado en Lightning. Sin custodia, sin intermediarios — Hodl & wear.",
+    bio: "Drop oficial de la comunidad. Hecho en Argentina, pagado con WAPU o Lightning. Sin custodia, sin intermediarios.",
     heroTitle: "Apparel HDMP",
     heroSubtitle:
       "La línea de ropa de la comunidad LaCrypta. Cada pieza es un manifiesto.",

@@ -353,6 +353,109 @@ export default function SettingsPage() {
             );
           })}
         </div>
+
+        {/* ── Grid density picker ────────────────────────────────── */}
+        <div
+          style={{
+            marginTop: 24,
+            paddingTop: 20,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: 1.5,
+              color: "var(--muted)",
+              fontWeight: 600,
+              marginBottom: 4,
+            }}
+          >
+            Tamaño de la cuadrícula
+          </div>
+          <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
+            Cuántos productos mostrar por fila en la tienda.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 10,
+            }}
+          >
+            {(["sm", "md", "lg"] as const).map((size) => {
+              const active = (settings.gridSize ?? "md") === size;
+              const labels: Record<typeof size, { name: string; desc: string }> = {
+                sm: { name: "Pequeña", desc: "Más por fila" },
+                md: { name: "Mediana", desc: "Equilibrada" },
+                lg: { name: "Grande", desc: "Pocos por fila" },
+              };
+              // Number of cells in the preview grid
+              const previewCols = size === "sm" ? 4 : size === "md" ? 3 : 2;
+              const cells = previewCols * previewCols;
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => {
+                    const next = { ...settings, gridSize: size };
+                    setSettings(next);
+                    saveSettings(next);
+                  }}
+                  style={{
+                    background: active
+                      ? "linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))"
+                      : "rgba(255,255,255,0.02)",
+                    border: `1.5px solid ${active ? "var(--primary)" : "rgba(255,255,255,0.08)"}`,
+                    borderRadius: 12,
+                    padding: 14,
+                    cursor: "pointer",
+                    textAlign: "center",
+                    transition: "border-color 0.2s, transform 0.15s",
+                    boxShadow: active ? "0 0 16px var(--primary-glow)" : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  {/* Grid preview icon */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: `repeat(${previewCols}, 1fr)`,
+                      gap: 3,
+                      width: 56,
+                      height: 56,
+                      margin: "0 auto 10px",
+                    }}
+                  >
+                    {Array.from({ length: cells }).map((_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          background: active ? "var(--primary)" : "var(--text-secondary)",
+                          opacity: active ? 0.85 : 0.35,
+                          borderRadius: 2,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>
+                    {labels[size].name}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                    {labels[size].desc}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* ── AI prompt builder info ─────────────────────────────────── */}

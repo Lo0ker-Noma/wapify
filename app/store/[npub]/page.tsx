@@ -256,7 +256,7 @@ export default function StorePage() {
         </div>
       )}
 
-      <div className="row">
+      <div className={`row grid-${settings?.gridSize ?? "md"}`}>
         {products.map((p) => (
           <div
             key={p.id}

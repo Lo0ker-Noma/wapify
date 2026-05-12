@@ -511,6 +511,47 @@ export default function SettingsPage() {
           custodia, sin webhooks, sin intermediarios.
         </p>
       </div>
+
+      {/* ── Save & back to store ─────────────────────────────────── */}
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          marginTop: 32,
+          paddingTop: 24,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            // Theme, grid size and OpenAI key auto-save. Lightning Address /
+            // Wapu fields still need an explicit save with validation.
+            if (!isLightningAddress(settings.lightningAddress)) {
+              setError("Lightning Address inválida (formato: usuario@dominio)");
+              return;
+            }
+            setError(null);
+            saveSettings(settings);
+            router.push("/store/lacrypta");
+          }}
+          style={{ flex: 1, minWidth: 200, fontSize: 15, padding: "14px 20px" }}
+        >
+          💾 Save & volver a la tienda
+        </button>
+        <Link
+          href="/dashboard"
+          className="btn btn-outline"
+          style={{ minWidth: 140 }}
+        >
+          ← Dashboard
+        </Link>
+      </div>
+      <p className="muted" style={{ fontSize: 12, marginTop: 10, textAlign: "center" }}>
+        Tu tema, cuadrícula y demás cambios ya se guardaron automáticamente al tocarlos. Este
+        botón sólo valida los datos de pago y te lleva a la tienda editable.
+      </p>
     </div>
   );
 }

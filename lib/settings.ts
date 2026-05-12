@@ -13,8 +13,6 @@ export type StoreSettings = {
   wapuApiBase?: string;
   /** Visual theme applied to the storefront */
   theme?: StoreTheme;
-  /** OpenAI key used by the AI product-image generator. Stays on-device. */
-  openaiApiKey?: string;
 };
 
 export const DEFAULT_SETTINGS: StoreSettings = {

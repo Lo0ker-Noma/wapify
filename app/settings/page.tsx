@@ -355,7 +355,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ── AI product image generator ─────────────────────────────── */}
+      {/* ── AI prompt builder info ─────────────────────────────────── */}
       <div className="card" style={{ marginBottom: 24 }}>
         <h3
           style={{
@@ -365,75 +365,30 @@ export default function SettingsPage() {
             marginBottom: 4,
           }}
         >
-          🖼 Generador IA de fotos de producto
+          ✨ Prompts de IA para fotos de producto
         </h3>
-        <p className="muted" style={{ fontSize: 13, marginBottom: 16, lineHeight: 1.6 }}>
-          Conectá tu cuenta de OpenAI (ChatGPT) y subí la foto de tu producto desde el
-          móvil. El modelo <code style={{ background: "rgba(255,255,255,0.06)", padding: "1px 6px", borderRadius: 4 }}>gpt-image-1</code> la
-          transforma en una foto profesional de e-commerce con fondo limpio,
-          iluminación de estudio y composición de venta.
+        <p className="muted" style={{ fontSize: 13, marginBottom: 12, lineHeight: 1.6 }}>
+          Al editar un producto, vas a ver el botón{" "}
+          <strong style={{ color: "var(--text)" }}>✨ Prompt para IA</strong>. Genera un
+          prompt listo para pegar en{" "}
+          <strong style={{ color: "var(--text)" }}>ChatGPT, Midjourney, DALL·E, Leonardo, Stable Diffusion</strong> —
+          tu servicio favorito.
         </p>
-
-        <Field label="OpenAI API Key (sk-…)">
-          <div style={{ display: "flex", gap: 6 }}>
-            <input
-              className="wapu-input"
-              type={showApiKey ? "text" : "password"}
-              value={settings.openaiApiKey ?? ""}
-              onChange={(e) =>
-                setSettings({ ...settings, openaiApiKey: e.target.value.trim() })
-              }
-              placeholder="sk-proj-…"
-              autoComplete="off"
-              spellCheck={false}
-              style={{ flex: 1 }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowApiKey((v) => !v)}
-              className="btn btn-outline"
-              style={{ padding: "0 14px" }}
-            >
-              {showApiKey ? "Ocultar" : "Mostrar"}
-            </button>
-          </div>
-          <p
-            className="muted"
-            style={{ fontSize: 12, marginTop: 8, lineHeight: 1.5 }}
-          >
-            Generala en{" "}
-            <a
-              href="https://platform.openai.com/api-keys"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "var(--primary)" }}
-            >
-              platform.openai.com/api-keys
-            </a>
-            . Se guarda solo en localStorage de tu device — nunca sale a nuestros servidores.
-            Cada generación cuesta unos centavos de USD según tu plan OpenAI.
-          </p>
-        </Field>
-
-        {settings.openaiApiKey && (
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 14px",
-              borderRadius: 100,
-              background: "rgba(0,255,157,0.1)",
-              border: "1px solid rgba(0,255,157,0.3)",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--primary)",
-              marginTop: 8,
-            }}
-          >
-            ✓ Cuenta conectada · botón "Generar con IA" disponible al editar productos
-          </div>
-        )}
+        <p className="muted" style={{ fontSize: 13, marginBottom: 4, lineHeight: 1.6 }}>
+          El prompt arma automáticamente:
+        </p>
+        <ul style={{ fontSize: 13, color: "var(--text-secondary)", paddingLeft: 20, lineHeight: 1.7 }}>
+          <li>Título y subtítulo del producto</li>
+          <li>Fondo elegido (blanco, negro, transparente o lifestyle)</li>
+          <li>Listado del resto de productos del catálogo + sus descripciones (para cohesión visual)</li>
+          <li>URLs de fotos de referencia de tus otros productos</li>
+        </ul>
+        <p
+          className="muted"
+          style={{ fontSize: 12, marginTop: 12, lineHeight: 1.5, fontStyle: "italic" }}
+        >
+          Después generás la imagen donde quieras, la descargás y la subís con el botón "📷 Subir foto".
+        </p>
       </div>
 
       <div

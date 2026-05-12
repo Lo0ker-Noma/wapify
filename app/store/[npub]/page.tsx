@@ -457,12 +457,11 @@ function ProductModal({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // AI image generator state
+  // AI prompt builder state
   const [aiOpen, setAiOpen] = useState(false);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
   const [aiBackground, setAiBackground] = useState<"white" | "black" | "transparent" | "lifestyle">("white");
-  const aiFileRef = useRef<HTMLInputElement>(null);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>("");
+  const [promptCopied, setPromptCopied] = useState(false);
 
   async function handleFile(file: File) {
     setUploadError(null);
@@ -487,42 +486,69 @@ function ProductModal({
     }
   }
 
-  async function handleAIGenerate(file: File) {
-    setAiError(null);
-    const apiKey = loadSettings().openaiApiKey;
-    if (!apiKey) {
-      setAiError("Conectá tu cuenta de OpenAI en Settings primero.");
-      return;
-    }
-    setAiGenerating(true);
-    try {
-      const form = new FormData();
-      form.append("image", file);
-      form.append("background", aiBackground);
-      form.append("productName", draft.name || "product");
-      form.append("productSubtitle", draft.subtitle ?? "");
-      form.append("apiKey", apiKey);
+  const BG_DESCRIPTIONS: Record<typeof aiBackground, string> = {
+    white: "pure clean white seamless background with a soft natural shadow underneath the product, e-commerce hero shot style",
+    black: "deep matte black seamless background with dramatic single-source rim lighting, high contrast, premium / minimalist mood",
+    transparent: "fully transparent background (PNG cutout), no shadow, clean hard edges around the product",
+    lifestyle: "natural lifestyle setting with shallow depth of field, warm golden-hour lighting, magazine-quality composition where the product is clearly the foreground subject",
+  };
 
-      // Pick up to 4 sibling product images as style references so the catalog
-      // stays cohesive in lighting / framing / color treatment. Filter out
-      // placeholder URLs since those would teach the model a placeholder look.
-      const referenceImgs = siblings
-        .map((s) => s.img)
-        .filter((u) => u && /^https:\/\//.test(u) && !u.includes("placehold.co"))
-        .slice(0, 4);
-      referenceImgs.forEach((u, i) => form.append(`reference${i}`, u));
+  function buildPrompt(): string {
+    const title = draft.name?.trim() || "the product";
+    const subtitle = draft.subtitle?.trim();
+    const bgDesc = BG_DESCRIPTIONS[aiBackground];
 
-      const res = await fetch("/api/generate-product-image", {
-        method: "POST",
-        body: form,
+    // Catalog style summary: short list of sibling product titles + subtitles
+    // so the AI service knows what other items live in this store.
+    const catalogItems = siblings
+      .slice(0, 6)
+      .map((s) => {
+        const sub = s.subtitle?.trim();
+        return sub ? `- ${s.name} — ${sub}` : `- ${s.name}`;
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "AI generation failed");
-      setDraft((d) => ({ ...d, img: json.url }));
-    } catch (e: any) {
-      setAiError(e?.message ?? "Error generando imagen");
-    } finally {
-      setAiGenerating(false);
+
+    const refUrls = siblings
+      .map((s) => s.img)
+      .filter((u) => u && /^https:\/\//.test(u) && !u.includes("placehold.co"))
+      .slice(0, 4);
+
+    const lines: string[] = [];
+    lines.push(`Professional e-commerce product photograph of: ${title}.`);
+    if (subtitle) lines.push(`Product details: ${subtitle}`);
+    lines.push("");
+    lines.push("Composition & lighting:");
+    lines.push(`- ${bgDesc}.`);
+    lines.push("- Square 1:1 framing, product centered, crisp focus.");
+    lines.push("- No text, no watermark, no logo overlays, no extra props.");
+    lines.push("- The product is the only subject — preserve its real identity, shape, materials, colors and branding exactly.");
+
+    if (catalogItems.length > 0) {
+      lines.push("");
+      lines.push(`Catalog cohesion — this photo belongs to a store that also sells:`);
+      catalogItems.forEach((it) => lines.push(it));
+      lines.push("Match the same lighting setup, color grading, mood and framing language used in those other items so the catalog feels consistent.");
+    }
+
+    if (refUrls.length > 0) {
+      lines.push("");
+      lines.push("Reference photos for the visual style (paste these into your AI service if it accepts image references):");
+      refUrls.forEach((u) => lines.push(u));
+    }
+
+    return lines.join("\n");
+  }
+
+  function generateAndCopy() {
+    const text = buildPrompt();
+    setGeneratedPrompt(text);
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(
+        () => {
+          setPromptCopied(true);
+          setTimeout(() => setPromptCopied(false), 2000);
+        },
+        () => { /* clipboard refused — user can still copy manually */ }
+      );
     }
   }
 
@@ -580,7 +606,7 @@ function ProductModal({
               background: aiOpen ? "rgba(0,255,157,0.06)" : undefined,
             }}
           >
-            ✨ Generar con IA
+            ✨ Prompt para IA
           </button>
         </div>
         {uploadError && (
@@ -589,7 +615,7 @@ function ProductModal({
           </p>
         )}
 
-        {/* ── AI image generator panel ──────────────────────────── */}
+        {/* ── AI prompt builder panel ──────────────────────────── */}
         {aiOpen && (
           <div
             style={{
@@ -601,30 +627,30 @@ function ProductModal({
             }}
           >
             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--primary)", marginBottom: 8, letterSpacing: 0.5 }}>
-              ✨ FOTO PRO CON GPT-IMAGE-1
+              ✨ PROMPT PARA IA DE IMAGEN
             </div>
-            <p className="muted" style={{ fontSize: 12, marginBottom: 6, lineHeight: 1.5 }}>
-              Subí la foto cruda del móvil. El modelo agarra contexto de:
+            <p className="muted" style={{ fontSize: 12, marginBottom: 10, lineHeight: 1.5 }}>
+              Generamos un prompt listo para pegar en ChatGPT, Midjourney, DALL·E, Leonardo, etc. Usa el contexto de:
             </p>
             <ul style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12, paddingLeft: 18, lineHeight: 1.6 }}>
               <li><strong style={{ color: "var(--text)" }}>Título:</strong> {draft.name || <em>(vacío)</em>}</li>
-              <li><strong style={{ color: "var(--text)" }}>Subtítulo:</strong> {draft.subtitle || <em>(vacío — completalo arriba para mejor resultado)</em>}</li>
+              <li><strong style={{ color: "var(--text)" }}>Subtítulo:</strong> {draft.subtitle || <em>(vacío — completalo arriba para mejor prompt)</em>}</li>
               <li>
                 <strong style={{ color: "var(--text)" }}>Look & feel:</strong>{" "}
                 {(() => {
-                  const n = siblings.filter(
+                  const named = Math.min(siblings.length, 6);
+                  const refs = siblings.filter(
                     (s) => s.img && /^https:\/\//.test(s.img) && !s.img.includes("placehold.co")
                   ).slice(0, 4).length;
-                  return n > 0
-                    ? `${n} foto${n === 1 ? "" : "s"} de tus otros productos como referencia visual`
-                    : "ningún otro producto con foto real todavía — esta va a ser la primera";
+                  if (named === 0) return "primer producto del catálogo (sin referencias todavía)";
+                  return `${named} producto${named === 1 ? "" : "s"} del catálogo${refs > 0 ? ` + ${refs} URL${refs === 1 ? "" : "s"} de referencia visual` : ""}`;
                 })()}
               </li>
             </ul>
-            <p className="muted" style={{ fontSize: 12, marginBottom: 12, lineHeight: 1.5 }}>
-              Elegí el fondo:
-            </p>
 
+            <p className="muted" style={{ fontSize: 12, marginBottom: 8, lineHeight: 1.5 }}>
+              Fondo del prompt:
+            </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 12 }}>
               {(["white", "black", "transparent", "lifestyle"] as const).map((bg) => {
                 const labels: Record<typeof bg, string> = {
@@ -656,39 +682,41 @@ function ProductModal({
               })}
             </div>
 
-            <input
-              ref={aiFileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleAIGenerate(f);
-                if (aiFileRef.current) aiFileRef.current.value = "";
-              }}
-            />
             <button
               type="button"
-              onClick={() => aiFileRef.current?.click()}
-              disabled={aiGenerating}
+              onClick={generateAndCopy}
               className="btn btn-primary"
-              style={{ width: "100%", cursor: aiGenerating ? "wait" : "pointer" }}
+              style={{ width: "100%" }}
             >
-              {aiGenerating ? "Generando con OpenAI… (10-30s)" : "📱 Subir foto cruda y generar"}
+              {promptCopied ? "✓ Copiado al portapapeles" : "📋 Generar prompt y copiar"}
             </button>
 
-            {aiError && (
-              <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>
-                {aiError}
-                {aiError.includes("OpenAI") && (
-                  <>
-                    {" "}
-                    <Link href="/settings" style={{ color: "var(--primary)", textDecoration: "underline" }}>
-                      Ir a Settings →
-                    </Link>
-                  </>
-                )}
-              </p>
+            {generatedPrompt && (
+              <>
+                <textarea
+                  readOnly
+                  value={generatedPrompt}
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                  style={{
+                    width: "100%",
+                    marginTop: 10,
+                    padding: 10,
+                    minHeight: 180,
+                    fontSize: 12,
+                    fontFamily: "var(--font-mono)",
+                    background: "rgba(0,0,0,0.5)",
+                    color: "var(--text)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 8,
+                    lineHeight: 1.5,
+                    resize: "vertical",
+                  }}
+                />
+                <p className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
+                  Pegalo en tu servicio favorito (ChatGPT, Midjourney, DALL·E, Leonardo, Stable Diffusion…),
+                  generá la imagen, descargala, y subila acá con <strong style={{ color: "var(--text)" }}>📷 Subir foto</strong>.
+                </p>
+              </>
             )}
           </div>
         )}

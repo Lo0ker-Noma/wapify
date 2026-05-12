@@ -412,6 +412,7 @@ export default function StorePage() {
       {editing && (
         <ProductModal
           product={editing}
+          siblings={products.filter((p) => p.id !== editing.id)}
           onClose={() => setEditing(null)}
           onSave={(p) => {
             updateProduct(p);
@@ -442,10 +443,12 @@ export default function StorePage() {
 
 function ProductModal({
   product,
+  siblings,
   onClose,
   onSave,
 }: {
   product: Product;
+  siblings: Product[];
   onClose: () => void;
   onSave: (p: Product) => void;
 }) {
@@ -497,7 +500,18 @@ function ProductModal({
       form.append("image", file);
       form.append("background", aiBackground);
       form.append("productName", draft.name || "product");
+      form.append("productSubtitle", draft.subtitle ?? "");
       form.append("apiKey", apiKey);
+
+      // Pick up to 4 sibling product images as style references so the catalog
+      // stays cohesive in lighting / framing / color treatment. Filter out
+      // placeholder URLs since those would teach the model a placeholder look.
+      const referenceImgs = siblings
+        .map((s) => s.img)
+        .filter((u) => u && /^https:\/\//.test(u) && !u.includes("placehold.co"))
+        .slice(0, 4);
+      referenceImgs.forEach((u, i) => form.append(`reference${i}`, u));
+
       const res = await fetch("/api/generate-product-image", {
         method: "POST",
         body: form,
@@ -589,9 +603,26 @@ function ProductModal({
             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--primary)", marginBottom: 8, letterSpacing: 0.5 }}>
               ✨ FOTO PRO CON GPT-IMAGE-1
             </div>
+            <p className="muted" style={{ fontSize: 12, marginBottom: 6, lineHeight: 1.5 }}>
+              Subí la foto cruda del móvil. El modelo agarra contexto de:
+            </p>
+            <ul style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12, paddingLeft: 18, lineHeight: 1.6 }}>
+              <li><strong style={{ color: "var(--text)" }}>Título:</strong> {draft.name || <em>(vacío)</em>}</li>
+              <li><strong style={{ color: "var(--text)" }}>Subtítulo:</strong> {draft.subtitle || <em>(vacío — completalo arriba para mejor resultado)</em>}</li>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Look & feel:</strong>{" "}
+                {(() => {
+                  const n = siblings.filter(
+                    (s) => s.img && /^https:\/\//.test(s.img) && !s.img.includes("placehold.co")
+                  ).slice(0, 4).length;
+                  return n > 0
+                    ? `${n} foto${n === 1 ? "" : "s"} de tus otros productos como referencia visual`
+                    : "ningún otro producto con foto real todavía — esta va a ser la primera";
+                })()}
+              </li>
+            </ul>
             <p className="muted" style={{ fontSize: 12, marginBottom: 12, lineHeight: 1.5 }}>
-              Subí la foto cruda hecha con el móvil y el modelo la convierte en una
-              foto profesional de e-commerce. Elegí el fondo:
+              Elegí el fondo:
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 12 }}>

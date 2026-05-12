@@ -39,9 +39,57 @@ export function loadStoreMeta(slug: string): StoreMeta | null {
   }
 }
 
+/**
+ * Loads meta preferring server (Vercel Blob) data over localStorage.
+ * If server is empty but localStorage has custom data, migrates it up.
+ */
+export async function loadStoreMetaWithServerSync(slug: string): Promise<StoreMeta | null> {
+  const fallback = DEFAULT_META[slug] ?? null;
+  if (typeof window === "undefined") return fallback;
+
+  try {
+    const res = await fetch(
+      `/api/store-data?slug=${encodeURIComponent(slug)}&kind=meta`,
+      { cache: "no-store" }
+    );
+    if (res.ok) {
+      const json = await res.json();
+      const serverData = json.data;
+      if (serverData && typeof serverData === "object" && serverData.name) {
+        window.localStorage.setItem(KEY_PREFIX + slug, JSON.stringify(serverData));
+        return { ...(fallback ?? { name: slug, bio: "" }), ...serverData };
+      }
+    }
+
+    // Server empty → migrate localStorage up
+    const localRaw = window.localStorage.getItem(KEY_PREFIX + slug);
+    if (localRaw) {
+      try {
+        const parsed = JSON.parse(localRaw) as StoreMeta;
+        if (parsed && parsed.name) {
+          fetch(`/api/store-data?slug=${encodeURIComponent(slug)}&kind=meta`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: parsed }),
+          }).catch(() => { /* best-effort */ });
+        }
+      } catch { /* ignore */ }
+    }
+  } catch {
+    // Server unavailable → fall through
+  }
+  return loadStoreMeta(slug);
+}
+
 export function saveStoreMeta(slug: string, meta: StoreMeta): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY_PREFIX + slug, JSON.stringify(meta));
+  // Persist to server (Vercel Blob) so it's visible from any browser
+  fetch(`/api/store-data?slug=${encodeURIComponent(slug)}&kind=meta`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: meta }),
+  }).catch(() => { /* best-effort */ });
 }
 
 export function resetStoreMeta(slug: string): void {

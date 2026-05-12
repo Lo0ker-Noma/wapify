@@ -17,6 +17,7 @@ import { loadSettings } from "@/lib/settings";
 import {
   StoreMeta,
   loadStoreMeta,
+  loadStoreMetaWithServerSync,
   saveStoreMeta,
   DEFAULT_META,
 } from "@/lib/store-meta";
@@ -33,9 +34,12 @@ export default function StorePage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    loadProductsWithServerSync(slug).then((p) => {
+    Promise.all([
+      loadProductsWithServerSync(slug),
+      loadStoreMetaWithServerSync(slug),
+    ]).then(([p, m]) => {
       setProducts(p);
-      setMeta(loadStoreMeta(slug));
+      setMeta(m);
       setHydrated(true);
     });
   }, [slug]);

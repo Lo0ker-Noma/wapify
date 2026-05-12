@@ -121,23 +121,48 @@ export function saveProducts(slug: string, products: Product[]): void {
 }
 
 /**
- * Loads products preferring server disk data over localStorage defaults.
+ * Loads products preferring server (Vercel Blob) data over localStorage.
  * Falls back to localStorage then defaults. Call this once on mount.
+ *
+ * Migration: if server has no data but localStorage has custom data (the
+ * admin's old localStorage from before server persistence existed), this
+ * pushes the local data up to the server so other browsers can see it.
  */
 export async function loadProductsWithServerSync(slug: string): Promise<Product[]> {
   if (typeof window === "undefined") return getDefaultProducts(slug);
   try {
-    const res = await fetch(`/api/store-data?slug=${encodeURIComponent(slug)}`);
+    const res = await fetch(`/api/store-data?slug=${encodeURIComponent(slug)}`, {
+      cache: "no-store",
+    });
     if (res.ok) {
       const json = await res.json();
-      if (Array.isArray(json.products) && json.products.length > 0) {
-        // Update localStorage with authoritative server data
-        window.localStorage.setItem(KEY_PREFIX + slug, JSON.stringify(json.products));
-        return json.products as Product[];
+      const serverData = json.data ?? json.products; // back-compat
+      if (Array.isArray(serverData) && serverData.length > 0) {
+        // Server is authoritative — update localStorage to match
+        window.localStorage.setItem(KEY_PREFIX + slug, JSON.stringify(serverData));
+        return serverData as Product[];
       }
     }
+
+    // Server has nothing yet. If localStorage has custom data (not defaults),
+    // push it up so other browsers can see it.
+    const localRaw = window.localStorage.getItem(KEY_PREFIX + slug);
+    if (localRaw) {
+      try {
+        const parsed = JSON.parse(localRaw) as Product[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Fire-and-forget upload, don't block the UI
+          fetch(`/api/store-data?slug=${encodeURIComponent(slug)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ products: parsed }),
+          }).catch(() => { /* best-effort */ });
+          return parsed;
+        }
+      } catch { /* ignore parse errors */ }
+    }
   } catch {
-    // Server unavailable — fall through to localStorage
+    // Server unavailable — fall through to localStorage / defaults
   }
   return loadProducts(slug);
 }

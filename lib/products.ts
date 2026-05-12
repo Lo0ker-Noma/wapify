@@ -108,10 +108,46 @@ export function loadProducts(slug: string): Product[] {
 
 export function saveProducts(slug: string, products: Product[]): void {
   if (typeof window === "undefined") return;
+  // Save to localStorage for immediate reads
   window.localStorage.setItem(KEY_PREFIX + slug, JSON.stringify(products));
+  // Also persist to server disk so data survives port changes and cache clears
+  fetch(`/api/store-data?slug=${encodeURIComponent(slug)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ products }),
+  }).catch(() => {
+    // Non-fatal: localStorage is the primary store, server is backup
+  });
+}
+
+/**
+ * Loads products preferring server disk data over localStorage defaults.
+ * Falls back to localStorage then defaults. Call this once on mount.
+ */
+export async function loadProductsWithServerSync(slug: string): Promise<Product[]> {
+  if (typeof window === "undefined") return getDefaultProducts(slug);
+  try {
+    const res = await fetch(`/api/store-data?slug=${encodeURIComponent(slug)}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.products) && json.products.length > 0) {
+        // Update localStorage with authoritative server data
+        window.localStorage.setItem(KEY_PREFIX + slug, JSON.stringify(json.products));
+        return json.products as Product[];
+      }
+    }
+  } catch {
+    // Server unavailable — fall through to localStorage
+  }
+  return loadProducts(slug);
 }
 
 export function resetProducts(slug: string): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(KEY_PREFIX + slug);
+  fetch(`/api/store-data?slug=${encodeURIComponent(slug)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ products: [] }),
+  }).catch(() => {});
 }

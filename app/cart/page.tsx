@@ -13,6 +13,8 @@ export default function CartPage() {
     name: "",
     address: "",
     city: "",
+    pickup: false,
+    npub: "",
   });
   const [phase, setPhase] = useState<"cart" | "shipping" | "pay">("cart");
   const [errors, setErrors] = useState<string | null>(null);
@@ -37,17 +39,30 @@ export default function CartPage() {
 
   function goPay() {
     setErrors(null);
-    if (!shipping.name.trim()) {
-      setErrors("Falta el nombre del comprador");
-      return;
-    }
-    if (!shipping.address.trim()) {
-      setErrors("Falta la dirección de envío");
-      return;
-    }
-    if (!shipping.city.trim()) {
-      setErrors("Falta la ciudad");
-      return;
+    if (shipping.pickup) {
+      // Pickup mode: only need a npub to coordinate via Nostr DM
+      if (!shipping.npub?.trim()) {
+        setErrors("Ingresá tu npub para que el admin pueda contactarte por Nostr");
+        return;
+      }
+      const npubClean = shipping.npub.trim();
+      if (!npubClean.startsWith("npub1") && !npubClean.startsWith("nprofile")) {
+        setErrors("El npub debe empezar con npub1… (copialo de tu wallet Nostr)");
+        return;
+      }
+    } else {
+      if (!shipping.name.trim()) {
+        setErrors("Falta el nombre del comprador");
+        return;
+      }
+      if (!shipping.address.trim()) {
+        setErrors("Falta la dirección de envío");
+        return;
+      }
+      if (!shipping.city.trim()) {
+        setErrors("Falta la ciudad");
+        return;
+      }
     }
     saveShipping(shipping);
     setPhase("pay");
@@ -276,87 +291,168 @@ export default function CartPage() {
 
           {phase === "shipping" && (
             <>
-              <div className="card" style={{ marginBottom: 16 }}>
-                <Field label="Nombre del comprador *">
-                  <input
-                    className="wapu-input"
-                    value={shipping.name}
-                    onChange={(e) =>
-                      setShipping({ ...shipping, name: e.target.value })
-                    }
-                    placeholder="Tu nombre"
-                  />
-                </Field>
-                <Field label="Email (opcional, para recibo)">
-                  <input
-                    className="wapu-input"
-                    type="email"
-                    value={shipping.email ?? ""}
-                    onChange={(e) =>
-                      setShipping({ ...shipping, email: e.target.value })
-                    }
-                    placeholder="email@ejemplo.com"
-                  />
-                </Field>
-                <Field label="Dirección de envío *">
-                  <input
-                    className="wapu-input"
-                    value={shipping.address}
-                    onChange={(e) =>
-                      setShipping({ ...shipping, address: e.target.value })
-                    }
-                    placeholder="Calle, número, piso"
-                  />
-                </Field>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr",
-                    gap: 12,
-                  }}
+              {/* ── Pickup / Delivery toggle ──────────────────────────── */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 6,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  borderRadius: 12,
+                  padding: 4,
+                  marginBottom: 20,
+                }}
+              >
+                <ToggleTab
+                  active={!shipping.pickup}
+                  onClick={() => setShipping({ ...shipping, pickup: false })}
                 >
-                  <Field label="Ciudad *">
-                    <input
-                      className="wapu-input"
-                      value={shipping.city}
-                      onChange={(e) =>
-                        setShipping({ ...shipping, city: e.target.value })
-                      }
-                      placeholder="Buenos Aires"
-                    />
-                  </Field>
-                  <Field label="CP">
-                    <input
-                      className="wapu-input"
-                      value={shipping.postalCode ?? ""}
-                      onChange={(e) =>
-                        setShipping({ ...shipping, postalCode: e.target.value })
-                      }
-                      placeholder="1414"
-                    />
-                  </Field>
-                </div>
-                <Field label="Teléfono / contacto (opcional)">
-                  <input
-                    className="wapu-input"
-                    value={shipping.phone ?? ""}
-                    onChange={(e) =>
-                      setShipping({ ...shipping, phone: e.target.value })
-                    }
-                    placeholder="+54 11 ..."
-                  />
-                </Field>
-                <Field label="Notas del envío (opcional)">
-                  <textarea
-                    className="wapu-input"
-                    rows={2}
-                    value={shipping.notes ?? ""}
-                    onChange={(e) =>
-                      setShipping({ ...shipping, notes: e.target.value })
-                    }
-                    placeholder="Horarios, indicaciones, etc."
-                  />
-                </Field>
+                  📦 Envío a domicilio
+                </ToggleTab>
+                <ToggleTab
+                  active={!!shipping.pickup}
+                  onClick={() => setShipping({ ...shipping, pickup: true })}
+                >
+                  🫂 Retiro en LaCrypta
+                </ToggleTab>
+              </div>
+
+              <div className="card" style={{ marginBottom: 16 }}>
+
+                {shipping.pickup ? (
+                  /* ── Pickup form: solo npub, sin KYC ────────────────── */
+                  <>
+                    <div
+                      style={{
+                        background: "linear-gradient(135deg, rgba(0,255,157,0.06), rgba(153,69,255,0.06))",
+                        border: "1px solid rgba(0,255,157,0.18)",
+                        borderRadius: 12,
+                        padding: "14px 16px",
+                        marginBottom: 20,
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6, color: "var(--primary)" }}>
+                        ⚡ Sin KYC — identificate con tu npub
+                      </div>
+                      <p className="muted" style={{ fontSize: 13, margin: 0, lineHeight: 1.5 }}>
+                        Pagás por Lightning y coordinás el retiro directo con el admin por Nostr DM.
+                        No hace falta nombre, dirección ni email.
+                      </p>
+                    </div>
+
+                    <Field label="Tu npub (Nostr) *">
+                      <input
+                        className="wapu-input"
+                        value={shipping.npub ?? ""}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, npub: e.target.value.trim() })
+                        }
+                        placeholder="npub1..."
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
+                      <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 5, display: "block" }}>
+                        Copialo desde tu wallet Nostr (Alby, Primal, Damus, etc.)
+                      </span>
+                    </Field>
+
+                    <Field label="Notas para el retiro (opcional)">
+                      <textarea
+                        className="wapu-input"
+                        rows={2}
+                        value={shipping.notes ?? ""}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, notes: e.target.value })
+                        }
+                        placeholder="Horario preferido, etc."
+                      />
+                    </Field>
+                  </>
+                ) : (
+                  /* ── Delivery form: campos normales ─────────────────── */
+                  <>
+                    <Field label="Nombre del comprador *">
+                      <input
+                        className="wapu-input"
+                        value={shipping.name}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, name: e.target.value })
+                        }
+                        placeholder="Tu nombre"
+                      />
+                    </Field>
+                    <Field label="Email (opcional, para recibo)">
+                      <input
+                        className="wapu-input"
+                        type="email"
+                        value={shipping.email ?? ""}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, email: e.target.value })
+                        }
+                        placeholder="email@ejemplo.com"
+                      />
+                    </Field>
+                    <Field label="Dirección de envío *">
+                      <input
+                        className="wapu-input"
+                        value={shipping.address}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, address: e.target.value })
+                        }
+                        placeholder="Calle, número, piso"
+                      />
+                    </Field>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "2fr 1fr",
+                        gap: 12,
+                      }}
+                    >
+                      <Field label="Ciudad *">
+                        <input
+                          className="wapu-input"
+                          value={shipping.city}
+                          onChange={(e) =>
+                            setShipping({ ...shipping, city: e.target.value })
+                          }
+                          placeholder="Buenos Aires"
+                        />
+                      </Field>
+                      <Field label="CP">
+                        <input
+                          className="wapu-input"
+                          value={shipping.postalCode ?? ""}
+                          onChange={(e) =>
+                            setShipping({ ...shipping, postalCode: e.target.value })
+                          }
+                          placeholder="1414"
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Teléfono / contacto (opcional)">
+                      <input
+                        className="wapu-input"
+                        value={shipping.phone ?? ""}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, phone: e.target.value })
+                        }
+                        placeholder="+54 11 ..."
+                      />
+                    </Field>
+                    <Field label="Notas del envío (opcional)">
+                      <textarea
+                        className="wapu-input"
+                        rows={2}
+                        value={shipping.notes ?? ""}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, notes: e.target.value })
+                        }
+                        placeholder="Horarios, indicaciones, etc."
+                      />
+                    </Field>
+                  </>
+                )}
 
                 {errors && (
                   <p
@@ -394,20 +490,44 @@ export default function CartPage() {
                 className="card"
                 style={{ marginBottom: 16, padding: 18 }}
               >
-                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
-                  Enviar a
-                </div>
-                <div style={{ fontWeight: 600, marginBottom: 2 }}>
-                  {shipping.name}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                  {shipping.address}, {shipping.city}
-                  {shipping.postalCode ? ` (${shipping.postalCode})` : ""}
-                </div>
-                {shipping.phone && (
-                  <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                    📞 {shipping.phone}
-                  </div>
+                {shipping.pickup ? (
+                  <>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
+                      🫂 Retiro en LaCrypta — sin KYC
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 12,
+                        color: "var(--primary)",
+                        wordBreak: "break-all",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {shipping.npub}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                      El admin te contacta por Nostr DM para coordinar
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
+                      📦 Enviar a
+                    </div>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                      {shipping.name}
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                      {shipping.address}, {shipping.city}
+                      {shipping.postalCode ? ` (${shipping.postalCode})` : ""}
+                    </div>
+                    {shipping.phone && (
+                      <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                        📞 {shipping.phone}
+                      </div>
+                    )}
+                  </>
                 )}
                 <button
                   onClick={() => setPhase("shipping")}
@@ -422,7 +542,7 @@ export default function CartPage() {
                     padding: 0,
                   }}
                 >
-                  ✎ Editar dirección
+                  ✎ Editar
                 </button>
               </div>
 
@@ -516,6 +636,37 @@ function Step({
       </span>
       {children}
     </span>
+  );
+}
+
+function ToggleTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: 1,
+        padding: "10px 14px",
+        borderRadius: 8,
+        background: active ? "var(--primary)" : "transparent",
+        color: active ? "#000" : "var(--text-secondary)",
+        border: "none",
+        fontWeight: 600,
+        fontSize: 13,
+        cursor: "pointer",
+        transition: "background 0.15s, color 0.15s",
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

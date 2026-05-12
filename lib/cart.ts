@@ -77,13 +77,16 @@ export type ShippingInfo = {
   postalCode?: string;
   phone?: string;
   notes?: string;
+  // Pickup at LaCrypta — no KYC, just a Nostr npub to coordinate via DM
+  pickup?: boolean;
+  npub?: string;
 };
 
 const SHIPPING_KEY = "wapufy:shipping";
 
 export function loadShipping(): ShippingInfo {
   if (typeof window === "undefined")
-    return { name: "", address: "", city: "" };
+    return { name: "", address: "", city: "", pickup: false };
   try {
     const raw = window.localStorage.getItem(SHIPPING_KEY);
     if (!raw) return { name: "", address: "", city: "" };

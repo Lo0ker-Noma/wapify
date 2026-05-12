@@ -8,7 +8,7 @@ import { useAuth } from "@/app/components/AuthProvider";
 import ProductDetailModal from "@/app/components/ProductDetailModal";
 import {
   Product,
-  loadProducts,
+  loadProductsWithServerSync,
   saveProducts,
   resetProducts,
   getDefaultProducts,
@@ -33,9 +33,11 @@ export default function StorePage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setProducts(loadProducts(slug));
-    setMeta(loadStoreMeta(slug));
-    setHydrated(true);
+    loadProductsWithServerSync(slug).then((p) => {
+      setProducts(p);
+      setMeta(loadStoreMeta(slug));
+      setHydrated(true);
+    });
   }, [slug]);
 
   const settings = useMemo(() => (hydrated ? loadSettings() : null), [hydrated]);
@@ -98,7 +100,7 @@ export default function StorePage() {
   }
 
   return (
-    <div className={`page-wrap ${isCrypta ? "theme-crypta" : ""}`}>
+    <div className={`page-wrap ${isCrypta ? `theme-${settings?.theme ?? "crypta"}` : ""}`}>
       {isCrypta ? (
         <div className="crypta-hero" style={{ position: "relative" }}>
           {meta.logo ? (
@@ -448,6 +450,13 @@ function ProductModal({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // AI image generator state
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiBackground, setAiBackground] = useState<"white" | "black" | "transparent" | "lifestyle">("white");
+  const aiFileRef = useRef<HTMLInputElement>(null);
+
   async function handleFile(file: File) {
     setUploadError(null);
     setUploading(true);
@@ -468,6 +477,34 @@ function ProductModal({
       }
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleAIGenerate(file: File) {
+    setAiError(null);
+    const apiKey = loadSettings().openaiApiKey;
+    if (!apiKey) {
+      setAiError("Conectá tu cuenta de OpenAI en Settings primero.");
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      form.append("background", aiBackground);
+      form.append("productName", draft.name || "product");
+      form.append("apiKey", apiKey);
+      const res = await fetch("/api/generate-product-image", {
+        method: "POST",
+        body: form,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "AI generation failed");
+      setDraft((d) => ({ ...d, img: json.url }));
+    } catch (e: any) {
+      setAiError(e?.message ?? "Error generando imagen");
+    } finally {
+      setAiGenerating(false);
     }
   }
 
@@ -505,29 +542,120 @@ function ProductModal({
             if (fileInputRef.current) fileInputRef.current.value = "";
           }}
         />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="btn btn-outline"
-          style={{
-            marginTop: 8,
-            width: "100%",
-            cursor: uploading ? "wait" : "pointer",
-          }}
-        >
-          {uploading ? "Subiendo a Vercel Blob…" : "📷 Subir imagen (Vercel Blob)"}
-        </button>
-        {uploadError && (
-          <p
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 8 }}>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="btn btn-outline"
+            style={{ cursor: uploading ? "wait" : "pointer" }}
+          >
+            {uploading ? "Subiendo…" : "📷 Subir foto"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setAiOpen((v) => !v)}
+            className="btn btn-outline"
             style={{
-              color: "#f87171",
-              fontSize: 12,
-              marginTop: 6,
+              borderColor: aiOpen ? "var(--primary)" : "rgba(0,255,157,0.4)",
+              color: aiOpen ? "var(--primary)" : undefined,
+              background: aiOpen ? "rgba(0,255,157,0.06)" : undefined,
             }}
           >
+            ✨ Generar con IA
+          </button>
+        </div>
+        {uploadError && (
+          <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>
             {uploadError}
           </p>
+        )}
+
+        {/* ── AI image generator panel ──────────────────────────── */}
+        {aiOpen && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 14,
+              borderRadius: 10,
+              background: "rgba(0,255,157,0.04)",
+              border: "1px solid rgba(0,255,157,0.20)",
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--primary)", marginBottom: 8, letterSpacing: 0.5 }}>
+              ✨ FOTO PRO CON GPT-IMAGE-1
+            </div>
+            <p className="muted" style={{ fontSize: 12, marginBottom: 12, lineHeight: 1.5 }}>
+              Subí la foto cruda hecha con el móvil y el modelo la convierte en una
+              foto profesional de e-commerce. Elegí el fondo:
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 12 }}>
+              {(["white", "black", "transparent", "lifestyle"] as const).map((bg) => {
+                const labels: Record<typeof bg, string> = {
+                  white: "Blanco",
+                  black: "Negro",
+                  transparent: "Sin fondo",
+                  lifestyle: "Lifestyle",
+                };
+                const active = aiBackground === bg;
+                return (
+                  <button
+                    key={bg}
+                    type="button"
+                    onClick={() => setAiBackground(bg)}
+                    style={{
+                      padding: "8px 6px",
+                      borderRadius: 6,
+                      border: `1px solid ${active ? "var(--primary)" : "rgba(255,255,255,0.1)"}`,
+                      background: active ? "var(--primary)" : "transparent",
+                      color: active ? "#000" : "var(--text-secondary)",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {labels[bg]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <input
+              ref={aiFileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleAIGenerate(f);
+                if (aiFileRef.current) aiFileRef.current.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => aiFileRef.current?.click()}
+              disabled={aiGenerating}
+              className="btn btn-primary"
+              style={{ width: "100%", cursor: aiGenerating ? "wait" : "pointer" }}
+            >
+              {aiGenerating ? "Generando con OpenAI… (10-30s)" : "📱 Subir foto cruda y generar"}
+            </button>
+
+            {aiError && (
+              <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>
+                {aiError}
+                {aiError.includes("OpenAI") && (
+                  <>
+                    {" "}
+                    <Link href="/settings" style={{ color: "var(--primary)", textDecoration: "underline" }}>
+                      Ir a Settings →
+                    </Link>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
         )}
       </Field>
       <Field label="Precio (sats)">

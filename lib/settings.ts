@@ -4,17 +4,24 @@ import { DEFAULT_LIGHTNING_ADDRESS } from "@/lib/admin";
 
 const KEY = "wapufy:settings";
 
+export type StoreTheme = "crypta" | "wapu" | "earth";
+
 export type StoreSettings = {
   lightningAddress: string;
   wapuUsername: string;
   wapuApiKey?: string;
   wapuApiBase?: string;
+  /** Visual theme applied to the storefront */
+  theme?: StoreTheme;
+  /** OpenAI key used by the AI product-image generator. Stays on-device. */
+  openaiApiKey?: string;
 };
 
 export const DEFAULT_SETTINGS: StoreSettings = {
   lightningAddress: DEFAULT_LIGHTNING_ADDRESS,
   wapuUsername: "lacrypta",
   wapuApiBase: "https://be-stage.wapu.app",
+  theme: "crypta",
 };
 
 export function loadSettings(): StoreSettings {

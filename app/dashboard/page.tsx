@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../components/AuthProvider";
 import ExportModal from "../components/ExportModal";
-import { Product, loadProducts } from "@/lib/products";
+import { Product, loadProductsWithServerSync, saveProducts } from "@/lib/products";
 import { loadSettings, StoreSettings } from "@/lib/settings";
 import { loadOrders, Order } from "@/lib/orders";
 import { loadStoreMeta, StoreMeta } from "@/lib/store-meta";
@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [meta, setMeta] = useState<StoreMeta | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: "", subtitle: "", price: "", img: "", tag: "" });
 
   useEffect(() => {
     if (loading) return;
@@ -25,11 +27,30 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
-    setProducts(loadProducts("lacrypta"));
+    loadProductsWithServerSync("lacrypta").then(setProducts);
     setSettings(loadSettings());
     setOrders(loadOrders());
     setMeta(loadStoreMeta("lacrypta"));
   }, [pubkey, isAdmin, loading, router]);
+
+  function handleAddProduct(e: React.FormEvent) {
+    e.preventDefault();
+    const price = parseInt(newProduct.price, 10);
+    if (!newProduct.name || isNaN(price) || price <= 0) return;
+    const product: Product = {
+      id: `manual-${Date.now()}`,
+      name: newProduct.name.trim(),
+      subtitle: newProduct.subtitle.trim() || undefined,
+      price,
+      img: newProduct.img.trim() || `https://placehold.co/600x600/000000/00ff9d/png?text=${encodeURIComponent(newProduct.name.trim())}`,
+      tag: newProduct.tag.trim() || undefined,
+    };
+    const updated = [...products, product];
+    saveProducts("lacrypta", updated);
+    setProducts(updated);
+    setNewProduct({ name: "", subtitle: "", price: "", img: "", tag: "" });
+    setShowAddProduct(false);
+  }
 
   function handleLogout() {
     logout();
@@ -48,7 +69,7 @@ export default function DashboardPage() {
   const totalSatsRecv = paid.reduce((acc, o) => acc + o.amountSats, 0);
 
   return (
-    <div className="page-wrap theme-crypta">
+    <div className={`page-wrap theme-${settings?.theme ?? "crypta"}`}>
       <div
         style={{
           display: "flex",
@@ -253,7 +274,158 @@ export default function DashboardPage() {
             </div>
           </Link>
         ))}
+        <button
+          onClick={() => setShowAddProduct(true)}
+          className="feature-card"
+          style={{
+            background: "rgba(0,255,157,0.04)",
+            border: "2px dashed rgba(0,255,157,0.25)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            cursor: "pointer",
+            minHeight: 180,
+            color: "var(--primary)",
+            transition: "border-color 0.2s, background 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(0,255,157,0.6)";
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,255,157,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(0,255,157,0.25)";
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,255,157,0.04)";
+          }}
+        >
+          <div style={{ fontSize: 36, lineHeight: 1, fontWeight: 300 }}>+</div>
+          <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.5 }}>
+            Agregar producto
+          </div>
+        </button>
       </div>
+
+      {showAddProduct && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAddProduct(false); }}
+        >
+          <div
+            className="card"
+            style={{ width: "100%", maxWidth: 480, padding: 32, position: "relative" }}
+          >
+            <button
+              onClick={() => setShowAddProduct(false)}
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                background: "none",
+                border: "none",
+                color: "var(--muted)",
+                fontSize: 20,
+                cursor: "pointer",
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 22,
+                fontWeight: 700,
+                marginBottom: 24,
+              }}
+            >
+              Nuevo producto
+            </h3>
+            <form onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1 }}>
+                  Nombre *
+                </span>
+                <input
+                  className="wapu-input"
+                  placeholder="Hoodie Nostr"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, name: e.target.value }))}
+                  required
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1 }}>
+                  Descripción
+                </span>
+                <input
+                  className="wapu-input"
+                  placeholder="Descripción breve…"
+                  value={newProduct.subtitle}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, subtitle: e.target.value }))}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1 }}>
+                  Precio (sats) *
+                </span>
+                <input
+                  className="wapu-input"
+                  type="number"
+                  min={1}
+                  placeholder="1000"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, price: e.target.value }))}
+                  required
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1 }}>
+                  URL de imagen
+                </span>
+                <input
+                  className="wapu-input"
+                  placeholder="https://… (opcional)"
+                  value={newProduct.img}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, img: e.target.value }))}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1 }}>
+                  Etiqueta
+                </span>
+                <input
+                  className="wapu-input"
+                  placeholder="★ Nuevo (opcional)"
+                  value={newProduct.tag}
+                  onChange={(e) => setNewProduct((p) => ({ ...p, tag: e.target.value }))}
+                />
+              </label>
+              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Agregar producto
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowAddProduct(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div
         style={{

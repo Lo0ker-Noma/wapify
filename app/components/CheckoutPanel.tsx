@@ -371,6 +371,38 @@ export default function CheckoutPanel({
                 : "Verificando vía Lightning + Nostr (NIP-57)…"
               : "Escuchando zap receipts NIP-57 en relays…"}
           </p>
+
+          {/* Manual fallback — some wallets don't expose LUD-21 verify and
+              don't publish NIP-57 zap receipts. The user can confirm trust-
+              style after paying. */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!confirm("¿Confirmás que ya pagaste el invoice? Se va a marcar como pagado.")) return;
+              if (orderId) markOrderPaid(orderId);
+              setPhase("paid");
+            }}
+            style={{
+              marginTop: 10,
+              width: "100%",
+              padding: "10px 14px",
+              background: "transparent",
+              border: "1px dashed rgba(0,255,157,0.4)",
+              color: "var(--primary)",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            ✓ Ya pagué — confirmar manualmente
+          </button>
+          <p
+            className="muted"
+            style={{ fontSize: 11, marginTop: 6, textAlign: "center", lineHeight: 1.5 }}
+          >
+            Usalo solo si tu wallet no soporta auto-verify (WalletOfSatoshi básico, p.ej).
+          </p>
         </>
       )}
 

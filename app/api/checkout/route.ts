@@ -85,7 +85,8 @@ export async function POST(req: Request) {
     let pr: string;
     let verify: string | null = null;
     let lnAddress: string;
-    let nip57: boolean = false;
+    let nip57 = false;
+    let sellerNostrPubkey: string | null = null;
 
     if (isLightningAddress(sellerRaw)) {
       // Generic LNURL-pay flow (works with WoS, Alby, Strike, …).
@@ -94,6 +95,7 @@ export async function POST(req: Request) {
       try {
         const meta = await fetchLnurlpMetadata(sellerRaw);
         if (meta.allowsNostr && meta.nostrPubkey) {
+          sellerNostrPubkey = meta.nostrPubkey;
           zapReq = buildZapRequest({
             amountMsat,
             recipientHex: meta.nostrPubkey,
@@ -126,6 +128,8 @@ export async function POST(req: Request) {
       ln_address: lnAddress,
       seller_username: sellerRaw,
       nip57,
+      seller_nostr_pubkey: sellerNostrPubkey,
+      zap_relays: nip57 ? ZAP_RELAYS : [],
     });
   } catch (e: any) {
     console.error("[checkout] error", e);

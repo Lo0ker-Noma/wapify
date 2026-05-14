@@ -10,6 +10,12 @@ type CheckoutData = {
   amount_sat: number;
   ln_address: string;
   seller_username: string;
+  /** True if the seller's LNURL provider advertises NIP-57 zaps */
+  nip57?: boolean;
+  /** Hex pubkey of the seller's zap-publishing Nostr identity (LUD-12) */
+  seller_nostr_pubkey?: string;
+  /** Relays the wallet was instructed to publish the receipt to */
+  zap_relays?: string[];
 };
 
 type Phase = "loading" | "ready" | "paid" | "error";
@@ -153,18 +159,26 @@ export default function CheckoutPanel({
   }, [phase, data, method, orderId]);
 
   // ── NIP-57 zap receipts via Nostr relays (fast path B) ──────────────────────
-  // Subscribes to kind:9735 events on several relays. The moment a zap receipt
-  // is published with a bolt11 tag matching our invoice, we confirm instantly —
-  // no polling needed. Runs in parallel with LUD-21 polling.
+  // Subscribes to kind:9735 events on the same relays we asked the wallet to
+  // publish to. The moment a zap receipt arrives with a bolt11 tag matching
+  // our invoice, we confirm in milliseconds.
+  //
+  // Two important optimisations:
+  //  • Filter by #p:<seller_nostr_pubkey> so the relay only sends us zaps to
+  //    that recipient (not every zap on the relay).
+  //  • Open the WebSockets as soon as we have the invoice (no waiting on the
+  //    HTTP polling effect) and subscribe with a tiny `since` window.
   useEffect(() => {
-    if (phase !== "ready" || !data?.invoice) return;
+    if (phase !== "ready" || !data?.invoice || !data.nip57) return;
 
-    const RELAYS = [
-      "wss://relay.damus.io",
-      "wss://relay.nostr.band",
-      "wss://nos.lol",
-      "wss://relay.primal.net",
-    ];
+    const RELAYS = (data.zap_relays && data.zap_relays.length > 0)
+      ? data.zap_relays
+      : [
+          "wss://relay.damus.io",
+          "wss://relay.nostr.band",
+          "wss://nos.lol",
+          "wss://relay.primal.net",
+        ];
 
     let confirmed = false;
     const sockets: WebSocket[] = [];
@@ -177,7 +191,10 @@ export default function CheckoutPanel({
     }
 
     const invoiceLower = data.invoice.toLowerCase();
-    const since = Math.floor(Date.now() / 1000) - 30;
+    const since = Math.floor(Date.now() / 1000) - 5;
+    // NIP-01 standard tag filter — narrows server-side to just our seller
+    const filter: Record<string, any> = { kinds: [9735], since, limit: 30 };
+    if (data.seller_nostr_pubkey) filter["#p"] = [data.seller_nostr_pubkey];
 
     RELAYS.forEach((url) => {
       try {
@@ -185,7 +202,7 @@ export default function CheckoutPanel({
         const subId = `wfy-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
         ws.onopen = () => {
           ws.send(
-            JSON.stringify(["REQ", subId, { kinds: [9735], since, limit: 50 }])
+            JSON.stringify(["REQ", subId, filter])
           );
         };
         ws.onmessage = (e) => {
@@ -369,39 +386,9 @@ export default function CheckoutPanel({
               ? method === "wapu"
                 ? "Wapu confirma en ~1.5s"
                 : "Verificando vía Lightning + Nostr (NIP-57)…"
-              : "Escuchando zap receipts NIP-57 en relays…"}
-          </p>
-
-          {/* Manual fallback — some wallets don't expose LUD-21 verify and
-              don't publish NIP-57 zap receipts. The user can confirm trust-
-              style after paying. */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!confirm("¿Confirmás que ya pagaste el invoice? Se va a marcar como pagado.")) return;
-              if (orderId) markOrderPaid(orderId);
-              setPhase("paid");
-            }}
-            style={{
-              marginTop: 10,
-              width: "100%",
-              padding: "10px 14px",
-              background: "transparent",
-              border: "1px dashed rgba(0,255,157,0.4)",
-              color: "var(--primary)",
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            ✓ Ya pagué — confirmar manualmente
-          </button>
-          <p
-            className="muted"
-            style={{ fontSize: 11, marginTop: 6, textAlign: "center", lineHeight: 1.5 }}
-          >
-            Usalo solo si tu wallet no soporta auto-verify (WalletOfSatoshi básico, p.ej).
+              : data.nip57
+              ? "Escuchando zap receipt NIP-57 — confirma en ms"
+              : "El Lightning Address del seller no expone auto-verify"}
           </p>
         </>
       )}

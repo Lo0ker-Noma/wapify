@@ -44,7 +44,29 @@ export default function CheckoutPanel({
   const [copied, setCopied] = useState<"invoice" | "ln" | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [ars, setArs] = useState<number | null>(null);
   const polledRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ── ARS conversion preview for Wapu method ──────────────────────────────
+  // Fetched whenever sats or method changes, only when method = "wapu" since
+  // Wapu rates come from the Wapu API and only matter for ARS-priced sellers.
+  useEffect(() => {
+    if (method !== "wapu" || !amountSats || amountSats <= 0) {
+      setArs(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/rates?sats=${amountSats}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled) return;
+        if (j && typeof j.ars === "number") setArs(j.ars);
+      })
+      .catch(() => { /* network error — silently hide the preview */ });
+    return () => {
+      cancelled = true;
+    };
+  }, [amountSats, method]);
 
   useEffect(() => {
     if (phase === "paid") setShowPopup(true);
@@ -258,6 +280,79 @@ export default function CheckoutPanel({
           >
             ⚡ Lightning
           </Tab>
+        </div>
+      )}
+
+      {/* ── ARS conversion preview (Wapu method) ─────────────────────── */}
+      {method === "wapu" && phase !== "paid" && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "10px 14px",
+            marginBottom: 14,
+            borderRadius: 10,
+            background: "linear-gradient(135deg, rgba(0,255,157,0.06), rgba(153,69,255,0.04))",
+            border: "1px solid rgba(0,255,157,0.18)",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: 1.2,
+                color: "var(--muted)",
+                fontWeight: 600,
+                marginBottom: 2,
+              }}
+            >
+              Equivale a
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 20,
+                fontWeight: 700,
+                color: "var(--primary)",
+                lineHeight: 1.1,
+              }}
+            >
+              {ars !== null
+                ? `$ ${ars.toLocaleString("es-AR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })} ARS`
+                : "…"}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div
+              style={{
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: 1.2,
+                color: "var(--muted)",
+                fontWeight: 600,
+                marginBottom: 2,
+              }}
+            >
+              Pagás
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 16,
+                fontWeight: 700,
+                color: "var(--text)",
+                lineHeight: 1.1,
+              }}
+            >
+              ⚡ {amountSats.toLocaleString("es-AR")} sats
+            </div>
+          </div>
         </div>
       )}
 

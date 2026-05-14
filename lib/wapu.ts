@@ -117,6 +117,23 @@ export async function arsToSats(amountArs: number): Promise<number> {
 }
 
 /**
+ * Convert satoshis back to ARS using current Wapu rates.
+ * Used by the buyer-side checkout preview ("X sats ≈ Y ARS").
+ * Symmetric round-trip of arsToSats (same sell rates).
+ */
+export async function satsToArs(amountSats: number): Promise<number> {
+  const { rates } = await getRates();
+  const usdtArs = rates.find((r) => r.pair === "USDT/ARS");
+  const btcUsd = rates.find((r) => r.pair === "BTC/USD");
+  if (!usdtArs || !btcUsd) {
+    throw new Error("Missing required Wapu rate pairs (USDT/ARS, BTC/USD)");
+  }
+  const btc = amountSats / 1e8;
+  const usdt = btc * btcUsd.sell;
+  return usdt * usdtArs.sell;
+}
+
+/**
  * Build the public Lightning Address for a Wapu user (used in QR / display).
  * Note: the actual @wapu.app domain is used by their LNURL infra, even if
  * the API host is be-stage.wapu.app or be-prod.wapu.app.

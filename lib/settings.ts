@@ -26,13 +26,22 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   gridSize: "md",
 };
 
+// Legacy demo placeholder we shipped before — auto-migrate to current default
+// so existing browsers don't keep paying the old placeholder address.
+const LEGACY_LN_DEFAULTS = ["savvyutensil489@walletofsatoshi.com"];
+
 export function loadSettings(): StoreSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<StoreSettings>;
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      const merged: StoreSettings = { ...DEFAULT_SETTINGS, ...parsed };
+      if (LEGACY_LN_DEFAULTS.includes(merged.lightningAddress)) {
+        merged.lightningAddress = DEFAULT_LIGHTNING_ADDRESS;
+        window.localStorage.setItem(KEY, JSON.stringify(merged));
+      }
+      return merged;
     }
   } catch {
     // ignore

@@ -8,7 +8,8 @@ export const ADMIN_NPUB =
 export const ADMIN_PUBKEY_HEX =
   "51d31de55347780bb2aa36887142b46cb3e98eed2e5352adab5926168c307e90";
 
-export const DEFAULT_LIGHTNING_ADDRESS = "savvyutensil489@walletofsatoshi.com";
+// Primal supports NIP-57 zap receipts, so checkout auto-verifies in ms.
+export const DEFAULT_LIGHTNING_ADDRESS = "noblemoose21@primal.net";
 
 export function isAdminPubkey(pk: string | null | undefined): boolean {
   if (!pk) return false;

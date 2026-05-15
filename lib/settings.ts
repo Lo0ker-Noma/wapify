@@ -20,15 +20,19 @@ export type StoreSettings = {
 
 export const DEFAULT_SETTINGS: StoreSettings = {
   lightningAddress: DEFAULT_LIGHTNING_ADDRESS,
-  wapuUsername: "lacrypta",
+  // Usertag real del admin del demo en Wapu staging (be-stage.wapu.app).
+  // El usertag previo "lacrypta" no existe en staging y devolvía
+  // "User not found" al intentar pagar con Wapu.
+  wapuUsername: "lookernoma",
   wapuApiBase: "https://be-stage.wapu.app",
   theme: "crypta",
   gridSize: "md",
 };
 
-// Legacy demo placeholder we shipped before — auto-migrate to current default
-// so existing browsers don't keep paying the old placeholder address.
+// Legacy demo placeholders we shipped before — auto-migrate to current defaults
+// so existing browsers don't keep paying / receiving on dead addresses.
 const LEGACY_LN_DEFAULTS = ["savvyutensil489@walletofsatoshi.com"];
+const LEGACY_WAPU_DEFAULTS = ["lacrypta"];
 
 export function loadSettings(): StoreSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
@@ -37,8 +41,16 @@ export function loadSettings(): StoreSettings {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<StoreSettings>;
       const merged: StoreSettings = { ...DEFAULT_SETTINGS, ...parsed };
+      let mutated = false;
       if (LEGACY_LN_DEFAULTS.includes(merged.lightningAddress)) {
         merged.lightningAddress = DEFAULT_LIGHTNING_ADDRESS;
+        mutated = true;
+      }
+      if (LEGACY_WAPU_DEFAULTS.includes(merged.wapuUsername)) {
+        merged.wapuUsername = DEFAULT_SETTINGS.wapuUsername;
+        mutated = true;
+      }
+      if (mutated) {
         window.localStorage.setItem(KEY, JSON.stringify(merged));
       }
       return merged;

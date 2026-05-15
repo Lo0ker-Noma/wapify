@@ -177,165 +177,221 @@ export default function WapuPaymentPanel({
     setPhase("login");
   }
 
+  // ── Always-visible ARS conversion card ──────────────────────────────────
+  const arsCard = phase !== "paid" && (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "10px 14px",
+        marginBottom: 14,
+        borderRadius: 10,
+        background: "linear-gradient(135deg, rgba(0,255,157,0.06), rgba(153,69,255,0.04))",
+        border: "1px solid rgba(0,255,157,0.18)",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 10,
+            textTransform: "uppercase",
+            letterSpacing: 1.2,
+            color: "var(--muted)",
+            fontWeight: 600,
+            marginBottom: 2,
+          }}
+        >
+          Equivale a
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 20,
+            fontWeight: 700,
+            color: "var(--primary)",
+            lineHeight: 1.1,
+          }}
+        >
+          {ars !== null
+            ? `$ ${ars.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })} ARS`
+            : "…"}
+        </div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div
+          style={{
+            fontSize: 10,
+            textTransform: "uppercase",
+            letterSpacing: 1.2,
+            color: "var(--muted)",
+            fontWeight: 600,
+            marginBottom: 2,
+          }}
+        >
+          Pagás
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 16,
+            fontWeight: 700,
+            color: "var(--text)",
+            lineHeight: 1.1,
+          }}
+        >
+          ⚡ {amountSats.toLocaleString("es-AR")} sats
+        </div>
+      </div>
+    </div>
+  );
+
   // ── Render ──────────────────────────────────────────────────────────────
   if (phase === "login" || (phase === "paying" && !accessToken)) {
     return (
-      <form
-        onSubmit={handleLogin}
-        style={{ display: "flex", flexDirection: "column", gap: 12 }}
-      >
-        <div
-          style={{
-            padding: "10px 14px",
-            background: "rgba(220,77,138,0.06)",
-            border: "1px solid rgba(220,77,138,0.25)",
-            borderRadius: 10,
-          }}
+      <>
+        {arsCard}
+        <form
+          onSubmit={handleLogin}
+          style={{ display: "flex", flexDirection: "column", gap: 12 }}
         >
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-            🤖 Iniciar sesión en Wapu
-          </div>
-          <p className="muted" style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>
-            Pagás con tu saldo de Wapu en USDT. El monto se calcula desde {amountSats} sats.
-          </p>
           <div
             style={{
-              marginTop: 8,
-              padding: "5px 8px",
-              borderRadius: 6,
-              background: "rgba(255,200,0,0.08)",
-              border: "1px solid rgba(255,200,0,0.3)",
-              fontSize: 11,
-              color: "#fde68a",
-              display: "inline-block",
+              padding: "10px 14px",
+              background: "rgba(220,77,138,0.06)",
+              border: "1px solid rgba(220,77,138,0.25)",
+              borderRadius: 10,
             }}
           >
-            ⚠ STAGING — <code style={{ fontSize: 11 }}>be-stage.wapu.app</code>. Usá una cuenta de
-            staging, no tu cuenta de producción.
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+              🤖 Iniciar sesión en Wapu
+            </div>
+            <p className="muted" style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>
+              Pagás con tu saldo de Wapu (USDT). Apuntamos a <code style={{ fontSize: 11 }}>be-stage.wapu.app</code>.
+            </p>
           </div>
-        </div>
-        <Field label="Email Wapu">
-          <input
-            className="wapu-input"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu@email.com"
-            required
-            autoComplete="username"
-          />
-        </Field>
-        <Field label="Contraseña">
-          <input
-            className="wapu-input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            autoComplete="current-password"
-          />
-        </Field>
-        {error && (
-          <p style={{ color: "#f87171", fontSize: 13, margin: 0 }}>{error}</p>
-        )}
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={phase === "paying"}
-        >
-          {phase === "paying" ? "Conectando…" : "Conectar con Wapu →"}
-        </button>
-        <p
-          className="muted"
-          style={{ fontSize: 11, textAlign: "center", margin: 0, lineHeight: 1.5 }}
-        >
-          Apuntamos a <code>be-stage.wapu.app</code>. Tu token JWT queda
-          en sessionStorage de tu navegador (sale al cerrar la pestaña).
-        </p>
-      </form>
+          <Field label="Email Wapu">
+            <input
+              className="wapu-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+              required
+              autoComplete="username"
+            />
+          </Field>
+          <Field label="Contraseña">
+            <input
+              className="wapu-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+            />
+          </Field>
+          {error && (
+            <p style={{ color: "#f87171", fontSize: 13, margin: 0 }}>{error}</p>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={phase === "paying"}
+          >
+            {phase === "paying" ? "Conectando…" : "Conectar con Wapu →"}
+          </button>
+        </form>
+      </>
     );
   }
 
   if (phase === "confirm" || phase === "paying") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div
-          style={{
-            padding: 16,
-            background: "linear-gradient(135deg, rgba(0,255,157,0.05), rgba(153,69,255,0.04))",
-            border: "1px solid rgba(0,255,157,0.18)",
-            borderRadius: 12,
-          }}
-        >
+      <>
+        {arsCard}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div
             style={{
-              fontSize: 11,
-              textTransform: "uppercase",
-              letterSpacing: 1.2,
-              color: "var(--muted)",
-              fontWeight: 600,
-              marginBottom: 6,
+              padding: 16,
+              background: "linear-gradient(135deg, rgba(0,255,157,0.05), rgba(153,69,255,0.04))",
+              border: "1px solid rgba(0,255,157,0.18)",
+              borderRadius: 12,
             }}
           >
-            Transferencia interna Wapu
+            <div
+              style={{
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: 1.2,
+                color: "var(--muted)",
+                fontWeight: 600,
+                marginBottom: 6,
+              }}
+            >
+              Transferencia interna Wapu
+            </div>
+            <Row label="Producto" value={productName} />
+            <Row label="Hacia" value={`@${receiverUsername}`} />
           </div>
-          <Row label="Producto" value={productName} />
-          <Row label="Hacia" value={`@${receiverUsername}`} />
-          {ars !== null && (
-            <Row label="Equivale a" value={`$ ${ars.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS`} />
+          {error && (
+            <p style={{ color: "#f87171", fontSize: 13, margin: 0 }}>{error}</p>
           )}
-          <Row label="A pagar" value={`⚡ ${amountSats.toLocaleString("es-AR")} sats`} mono />
+          <button
+            onClick={handlePay}
+            className="btn btn-primary"
+            disabled={phase === "paying"}
+          >
+            {phase === "paying" ? "Procesando…" : "Confirmar y pagar ⚡"}
+          </button>
+          <button onClick={handleLogout} className="btn btn-outline">
+            Salir de Wapu
+          </button>
         </div>
-        {error && (
-          <p style={{ color: "#f87171", fontSize: 13, margin: 0 }}>{error}</p>
-        )}
-        <button
-          onClick={handlePay}
-          className="btn btn-primary"
-          disabled={phase === "paying"}
-        >
-          {phase === "paying" ? "Procesando…" : "Confirmar y pagar ⚡"}
-        </button>
-        <button onClick={handleLogout} className="btn btn-outline">
-          Salir de Wapu
-        </button>
-      </div>
+      </>
     );
   }
 
   if (phase === "polling") {
     return (
-      <div
-        style={{
-          padding: 20,
-          textAlign: "center",
-          background: "rgba(0,255,157,0.04)",
-          border: "1px solid rgba(0,255,157,0.2)",
-          borderRadius: 12,
-        }}
-      >
+      <>
+        {arsCard}
         <div
           style={{
-            display: "inline-block",
-            width: 9,
-            height: 9,
-            borderRadius: 5,
-            background: "var(--primary)",
-            marginRight: 8,
-            animation: "pulse 1.6s ease-in-out infinite",
+            padding: 20,
+            textAlign: "center",
+            background: "rgba(0,255,157,0.04)",
+            border: "1px solid rgba(0,255,157,0.2)",
+            borderRadius: 12,
           }}
-        />
-        <span style={{ fontSize: 14, fontWeight: 600 }}>
-          Esperando confirmación Wapu…
-        </span>
-        <p
-          className="muted"
-          style={{ fontSize: 12, marginTop: 10, lineHeight: 1.5 }}
         >
-          Transacción {txId?.slice(0, 8)}… enviada. Wapu confirma en ~1-3s.
-        </p>
-      </div>
+          <div
+            style={{
+              display: "inline-block",
+              width: 9,
+              height: 9,
+              borderRadius: 5,
+              background: "var(--primary)",
+              marginRight: 8,
+              animation: "pulse 1.6s ease-in-out infinite",
+            }}
+          />
+          <span style={{ fontSize: 14, fontWeight: 600 }}>
+            Esperando confirmación Wapu…
+          </span>
+          <p
+            className="muted"
+            style={{ fontSize: 12, marginTop: 10, lineHeight: 1.5 }}
+          >
+            Transacción {txId?.slice(0, 8)}… enviada. Wapu confirma en ~1-3s.
+          </p>
+        </div>
+      </>
     );
   }
 
@@ -357,34 +413,42 @@ export default function WapuPaymentPanel({
         <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
           {usdt !== null && `${usdt.toFixed(2)} USDT transferidos a @${receiverUsername}`}
         </div>
+        {ars !== null && (
+          <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+            ≈ $ {ars.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
+          </div>
+        )}
       </div>
     );
   }
 
   // error
   return (
-    <div
-      style={{
-        padding: 16,
-        background: "rgba(248,113,113,0.05)",
-        border: "1px solid rgba(248,113,113,0.4)",
-        borderRadius: 12,
-      }}
-    >
-      <p style={{ color: "#fca5a5", fontSize: 14, margin: 0, marginBottom: 10 }}>
-        <strong>Error:</strong> {error}
-      </p>
-      <button
-        onClick={() => {
-          setError(null);
-          setPhase(accessToken ? "confirm" : "login");
+    <>
+      {arsCard}
+      <div
+        style={{
+          padding: 16,
+          background: "rgba(248,113,113,0.05)",
+          border: "1px solid rgba(248,113,113,0.4)",
+          borderRadius: 12,
         }}
-        className="btn btn-outline"
-        style={{ width: "100%" }}
       >
-        Reintentar
-      </button>
-    </div>
+        <p style={{ color: "#fca5a5", fontSize: 14, margin: 0, marginBottom: 10 }}>
+          <strong>Error:</strong> {error}
+        </p>
+        <button
+          onClick={() => {
+            setError(null);
+            setPhase(accessToken ? "confirm" : "login");
+          }}
+          className="btn btn-outline"
+          style={{ width: "100%" }}
+        >
+          Reintentar
+        </button>
+      </div>
+    </>
   );
 }
 

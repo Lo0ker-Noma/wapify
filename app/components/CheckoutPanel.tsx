@@ -270,7 +270,10 @@ export default function CheckoutPanel({
 
   return (
     <div>
-      {hasBoth && phase !== "paid" && (
+      {/* Always render both tabs so the buyer can pick the payment rail.
+          If a rail isn't configured yet, the body shows a helpful message
+          with a link to /settings to set it up. */}
+      {phase !== "paid" && (
         <div
           style={{
             display: "flex",
@@ -282,7 +285,7 @@ export default function CheckoutPanel({
             marginBottom: 14,
           }}
         >
-          <Tab active={method === "wapu"} onClick={() => setMethod("wapu")} badge="rápido">
+          <Tab active={method === "wapu"} onClick={() => setMethod("wapu")} badge="cuenta">
             🤖 Wapu
           </Tab>
           <Tab
@@ -297,6 +300,12 @@ export default function CheckoutPanel({
       {/* ── Wapu native payment ───────────────────────────────────────
           When the buyer chooses Wapu, swap the LNURL/QR flow for the
           native API flow (login → confirm → inner_transfer → poll). */}
+      {method === "wapu" && !wapuUsername && (
+        <MissingConfigCard
+          rail="Wapu"
+          message="No hay un usuario Wapu configurado para esta tienda. Configurá tu cuenta Wapu en Settings para aceptar pagos con saldo Wapu."
+        />
+      )}
       {method === "wapu" && wapuUsername && (
         <WapuPaymentPanel
           amountSats={amountSats}
@@ -308,7 +317,13 @@ export default function CheckoutPanel({
         />
       )}
 
-      {method === "lightning" && phase === "loading" && (
+      {method === "lightning" && !lnAddress && (
+        <MissingConfigCard
+          rail="Lightning"
+          message="No hay un Lightning Address configurado para esta tienda. Configurá uno en Settings (recomendamos uno con NIP-57 como Primal o Alby) para aceptar pagos por Lightning."
+        />
+      )}
+      {method === "lightning" && lnAddress && phase === "loading" && (
         <div
           style={{
             padding: 20,
@@ -323,7 +338,7 @@ export default function CheckoutPanel({
         </div>
       )}
 
-      {method === "lightning" && phase === "error" && (
+      {method === "lightning" && lnAddress && phase === "error" && (
         <div
           style={{
             padding: 16,
@@ -467,6 +482,36 @@ export default function CheckoutPanel({
           onClose={() => setShowPopup(false)}
         />
       )}
+    </div>
+  );
+}
+
+function MissingConfigCard({ rail, message }: { rail: string; message: string }) {
+  return (
+    <div
+      style={{
+        padding: 16,
+        background: "rgba(220,77,138,0.06)",
+        border: "1px dashed rgba(220,77,138,0.4)",
+        borderRadius: 12,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          marginBottom: 6,
+          color: "#fbcfe8",
+        }}
+      >
+        ⚠ Pago con {rail} no configurado
+      </div>
+      <p className="muted" style={{ fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>
+        {message}
+      </p>
+      <a href="/settings" className="btn btn-outline" style={{ width: "100%", display: "block", textAlign: "center" }}>
+        Ir a Settings →
+      </a>
     </div>
   );
 }

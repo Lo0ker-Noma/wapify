@@ -134,6 +134,89 @@ export async function satsToArs(amountSats: number): Promise<number> {
 }
 
 /**
+ * Convert satoshis to USDT (≈USD) using current Wapu rates.
+ * Used by the native Wapu inner-transfer flow which takes amounts in USDT.
+ */
+export async function satsToUsdt(amountSats: number): Promise<number> {
+  const { rates } = await getRates();
+  const btcUsd = rates.find((r) => r.pair === "BTC/USD");
+  if (!btcUsd) throw new Error("Missing BTC/USD rate");
+  const btc = amountSats / 1e8;
+  return btc * btcUsd.sell;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Wapu native payment API (used by /api/wapu/* proxies)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type WapuLoginResponse = { access_token: string };
+export type WapuTransaction = {
+  transaction_id: string;
+  status: "Pending" | "Completed" | "Taken" | "Canceled" | "UserPending" | "Rejected";
+  type: string;
+  payment_amount: number;
+  payment_currency: string;
+  currency_taken?: string;
+  total_amount_taken?: number;
+  receiver_name?: string | null;
+  username?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export async function wapuLogin(email: string, password: string): Promise<WapuLoginResponse> {
+  const res = await fetch(`${WAPU_BASE}/users/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Wapu login failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function wapuInnerTransfer(
+  accessToken: string,
+  amountUsdt: number,
+  receiverUsername: string
+): Promise<WapuTransaction> {
+  // Wapu's inner_transfer is multipart/form-data
+  const form = new FormData();
+  form.append("amount", String(amountUsdt));
+  form.append("currency", "USDT");
+  form.append("receiver_username", receiverUsername);
+  const res = await fetch(`${WAPU_BASE}/transactions/inner_transfer`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: form,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Wapu transfer failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function wapuGetTransaction(
+  accessToken: string,
+  id: string
+): Promise<WapuTransaction> {
+  const res = await fetch(`${WAPU_BASE}/transactions/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Wapu tx lookup failed (${res.status})`);
+  }
+  return res.json();
+}
+
+/**
  * Build the public Lightning Address for a Wapu user (used in QR / display).
  * Note: the actual @wapu.app domain is used by their LNURL infra, even if
  * the API host is be-stage.wapu.app or be-prod.wapu.app.

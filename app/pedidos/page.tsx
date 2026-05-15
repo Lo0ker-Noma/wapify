@@ -163,6 +163,37 @@ function OrderRow({ order }: { order: Order }) {
           <span>·</span>
           <span>→ {order.lnAddress}</span>
         </div>
+        {(order.buyerName || order.buyerNpub) && (
+          <div
+            style={{
+              marginTop: 8,
+              padding: "6px 10px",
+              borderRadius: 8,
+              background: "rgba(0,255,157,0.06)",
+              border: "1px solid rgba(0,255,157,0.18)",
+              fontSize: 12,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ color: "var(--primary)", fontWeight: 700 }}>
+              {order.buyerName || "🔑 npub"}
+            </span>
+            {order.buyerNpub && (
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--text-secondary)",
+                  fontSize: 11,
+                }}
+              >
+                {order.buyerNpub.slice(0, 12)}…{order.buyerNpub.slice(-8)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div style={{ textAlign: "right" }}>

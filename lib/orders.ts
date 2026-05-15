@@ -6,12 +6,15 @@ export type Order = {
   id: string;
   productName: string;
   amountSats: number;
-  invoice: string; // bolt11
+  invoice: string; // bolt11 (empty for Wapu inner_transfer)
   verifyUrl: string;
   lnAddress: string;
   status: OrderStatus;
   createdAt: number;
   paidAt?: number;
+  /** Optional Nostr identity of the buyer — captured at checkout */
+  buyerNpub?: string;
+  buyerName?: string;
 };
 
 const KEY = "wapufy:orders";
@@ -84,6 +87,8 @@ export function recordOrder(o: Omit<Order, "id" | "createdAt" | "status"> & { st
     invoice: o.invoice,
     verifyUrl: o.verifyUrl,
     lnAddress: o.lnAddress,
+    buyerNpub: o.buyerNpub,
+    buyerName: o.buyerName,
   };
   const all = loadOrders();
   saveOrders([order, ...all]);

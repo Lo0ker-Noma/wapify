@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Product } from "@/lib/products";
 import CheckoutPanel from "./CheckoutPanel";
 import { useCart } from "./CartProvider";
+import { useAuth } from "./AuthProvider";
 
 export default function ProductDetailModal({
   product,
@@ -19,8 +20,21 @@ export default function ProductDetailModal({
 }) {
   const { add } = useCart();
   const router = useRouter();
+  const { npub, profile } = useAuth();
   const [mode, setMode] = useState<"buy" | "added">("buy");
   const [showCheckout, setShowCheckout] = useState(false);
+  const [identStep, setIdentStep] = useState(true); // identification before checkout
+  const [buyerNpub, setBuyerNpub] = useState("");
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerError, setBuyerError] = useState<string | null>(null);
+
+  // Auto-fill from logged-in Nostr identity
+  useEffect(() => {
+    if (npub) setBuyerNpub(npub);
+    const fromProfile =
+      (profile as any)?.display_name ?? (profile as any)?.name ?? "";
+    if (fromProfile) setBuyerName(fromProfile);
+  }, [npub, profile]);
 
   function handleAdd() {
     add(
@@ -213,7 +227,11 @@ export default function ProductDetailModal({
             ) : (
               <>
                 <button
-                  onClick={() => setShowCheckout(false)}
+                  onClick={() => {
+                    setShowCheckout(false);
+                    setIdentStep(true);
+                    setBuyerError(null);
+                  }}
                   style={{
                     background: "transparent",
                     border: "none",
@@ -226,13 +244,122 @@ export default function ProductDetailModal({
                 >
                   ← Volver
                 </button>
-                <CheckoutPanel
-                  amountSats={product.price}
-                  productName={product.name}
-                  lnAddress={lnAddress}
-                  wapuUsername={wapuUsername}
-                  compact
-                />
+
+                {identStep ? (
+                  <div
+                    style={{
+                      padding: 16,
+                      background: "linear-gradient(135deg, rgba(0,255,157,0.05), rgba(153,69,255,0.04))",
+                      border: "1px solid rgba(0,255,157,0.18)",
+                      borderRadius: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        textTransform: "uppercase",
+                        letterSpacing: 1.5,
+                        color: "var(--primary)",
+                        fontWeight: 700,
+                        marginBottom: 6,
+                      }}
+                    >
+                      🔑 Identificate (sin KYC)
+                    </div>
+                    <p className="muted" style={{ fontSize: 12, marginBottom: 14, lineHeight: 1.5 }}>
+                      Tu pedido queda asociado a tu npub Nostr. El admin te puede
+                      contactar por DM Nostr si necesita coordinar algo.
+                    </p>
+
+                    <label style={{ display: "block", marginBottom: 10 }}>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 11,
+                          textTransform: "uppercase",
+                          letterSpacing: 1.2,
+                          color: "var(--muted)",
+                          fontWeight: 600,
+                          marginBottom: 5,
+                        }}
+                      >
+                        Nombre (opcional)
+                      </span>
+                      <input
+                        className="wapu-input"
+                        value={buyerName}
+                        onChange={(e) => setBuyerName(e.target.value)}
+                        placeholder="Cómo te llamamos"
+                      />
+                    </label>
+
+                    <label style={{ display: "block", marginBottom: 6 }}>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 11,
+                          textTransform: "uppercase",
+                          letterSpacing: 1.2,
+                          color: "var(--muted)",
+                          fontWeight: 600,
+                          marginBottom: 5,
+                        }}
+                      >
+                        Tu npub *
+                      </span>
+                      <input
+                        className="wapu-input"
+                        value={buyerNpub}
+                        onChange={(e) => setBuyerNpub(e.target.value.trim())}
+                        placeholder="npub1…"
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
+                      {npub && buyerNpub === npub && (
+                        <span style={{ fontSize: 11, color: "var(--primary)", marginTop: 4, display: "block" }}>
+                          ✓ Auto-cargado desde tu sesión Nostr
+                        </span>
+                      )}
+                    </label>
+
+                    {buyerError && (
+                      <p style={{ color: "#f87171", fontSize: 12, margin: "8px 0 0" }}>
+                        {buyerError}
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ width: "100%", marginTop: 14 }}
+                      onClick={() => {
+                        const npubClean = buyerNpub.trim();
+                        if (!npubClean) {
+                          setBuyerError("Ingresá tu npub para identificar el pedido");
+                          return;
+                        }
+                        if (!npubClean.startsWith("npub1") && !npubClean.startsWith("nprofile")) {
+                          setBuyerError("El npub debe empezar con npub1…");
+                          return;
+                        }
+                        setBuyerError(null);
+                        setIdentStep(false);
+                      }}
+                    >
+                      Continuar al pago →
+                    </button>
+                  </div>
+                ) : (
+                  <CheckoutPanel
+                    amountSats={product.price}
+                    productName={product.name}
+                    lnAddress={lnAddress}
+                    wapuUsername={wapuUsername}
+                    buyerNpub={buyerNpub.trim()}
+                    buyerName={buyerName.trim() || undefined}
+                    compact
+                  />
+                )}
               </>
             )}
           </div>

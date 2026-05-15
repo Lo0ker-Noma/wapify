@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import QRCode from "qrcode";
 import { recordOrder, markOrderPaid } from "@/lib/orders";
+import WapuPaymentPanel from "./WapuPaymentPanel";
 
 type CheckoutData = {
   invoice: string;
@@ -27,12 +28,16 @@ export default function CheckoutPanel({
   lnAddress,
   wapuUsername,
   compact,
+  buyerNpub,
+  buyerName,
 }: {
   amountSats: number;
   productName: string;
   lnAddress?: string;
   wapuUsername?: string;
   compact?: boolean;
+  buyerNpub?: string;
+  buyerName?: string;
 }) {
   const initialMethod: Method = wapuUsername ? "wapu" : "lightning";
   const [method, setMethod] = useState<Method>(initialMethod);
@@ -78,6 +83,10 @@ export default function CheckoutPanel({
   }, [method, lnAddress, wapuUsername]);
 
   useEffect(() => {
+    // Skip the Lightning checkout init when the buyer selected Wapu — that
+    // method has its own native panel that handles login + inner_transfer.
+    if (method === "wapu") return;
+
     let cancelled = false;
     setPhase("loading");
     setData(null);
@@ -114,6 +123,8 @@ export default function CheckoutPanel({
           invoice: json.invoice,
           verifyUrl: json.verify_url,
           lnAddress: json.ln_address,
+          buyerNpub,
+          buyerName,
         });
         setOrderId(order.id);
       } catch (e: any) {
@@ -283,80 +294,21 @@ export default function CheckoutPanel({
         </div>
       )}
 
-      {/* ── ARS conversion preview (Wapu method) ─────────────────────── */}
-      {method === "wapu" && phase !== "paid" && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            padding: "10px 14px",
-            marginBottom: 14,
-            borderRadius: 10,
-            background: "linear-gradient(135deg, rgba(0,255,157,0.06), rgba(153,69,255,0.04))",
-            border: "1px solid rgba(0,255,157,0.18)",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: 10,
-                textTransform: "uppercase",
-                letterSpacing: 1.2,
-                color: "var(--muted)",
-                fontWeight: 600,
-                marginBottom: 2,
-              }}
-            >
-              Equivale a
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 20,
-                fontWeight: 700,
-                color: "var(--primary)",
-                lineHeight: 1.1,
-              }}
-            >
-              {ars !== null
-                ? `$ ${ars.toLocaleString("es-AR", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })} ARS`
-                : "…"}
-            </div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div
-              style={{
-                fontSize: 10,
-                textTransform: "uppercase",
-                letterSpacing: 1.2,
-                color: "var(--muted)",
-                fontWeight: 600,
-                marginBottom: 2,
-              }}
-            >
-              Pagás
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 16,
-                fontWeight: 700,
-                color: "var(--text)",
-                lineHeight: 1.1,
-              }}
-            >
-              ⚡ {amountSats.toLocaleString("es-AR")} sats
-            </div>
-          </div>
-        </div>
+      {/* ── Wapu native payment ───────────────────────────────────────
+          When the buyer chooses Wapu, swap the LNURL/QR flow for the
+          native API flow (login → confirm → inner_transfer → poll). */}
+      {method === "wapu" && wapuUsername && (
+        <WapuPaymentPanel
+          amountSats={amountSats}
+          productName={productName}
+          receiverUsername={wapuUsername}
+          buyerNpub={buyerNpub}
+          buyerName={buyerName}
+          onPaid={() => setShowPopup(true)}
+        />
       )}
 
-      {phase === "loading" && (
+      {method === "lightning" && phase === "loading" && (
         <div
           style={{
             padding: 20,
@@ -366,12 +318,12 @@ export default function CheckoutPanel({
           }}
         >
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-            Generando invoice via {method === "wapu" ? "Wapu" : "Lightning Address"}…
+            Generando invoice via Lightning Address…
           </p>
         </div>
       )}
 
-      {phase === "error" && (
+      {method === "lightning" && phase === "error" && (
         <div
           style={{
             padding: 16,
@@ -387,15 +339,15 @@ export default function CheckoutPanel({
             <button
               className="btn btn-outline"
               style={{ marginTop: 12 }}
-              onClick={() => setMethod(method === "wapu" ? "lightning" : "wapu")}
+              onClick={() => setMethod("wapu")}
             >
-              Probar con {method === "wapu" ? "Lightning Address" : "Wapu"}
+              Probar con Wapu
             </button>
           )}
         </div>
       )}
 
-      {phase === "ready" && data && qr && (
+      {method === "lightning" && phase === "ready" && data && qr && (
         <>
           <div
             style={{
@@ -439,7 +391,7 @@ export default function CheckoutPanel({
                 letterSpacing: 0.5,
               }}
             >
-              ⚡ {method === "wapu" ? "Wapu Lightning" : "Lightning verificado"}
+              ⚡ Lightning verificado
             </span>
           </p>
 
@@ -478,9 +430,7 @@ export default function CheckoutPanel({
               }}
             />
             {data.verify_url
-              ? method === "wapu"
-                ? "Wapu confirma en ~1.5s"
-                : "Verificando vía Lightning + Nostr (NIP-57)…"
+              ? "Verificando vía Lightning + Nostr (NIP-57)…"
               : data.nip57
               ? "Escuchando zap receipt NIP-57 — confirma en ms"
               : "El Lightning Address del seller no expone auto-verify"}
@@ -488,7 +438,7 @@ export default function CheckoutPanel({
         </>
       )}
 
-      {phase === "paid" && data && (
+      {method === "lightning" && phase === "paid" && data && (
         <div
           style={{
             background: "linear-gradient(135deg, rgba(0,255,157,0.08), rgba(153,69,255,0.04))",
@@ -509,9 +459,9 @@ export default function CheckoutPanel({
       )}
 
       {/* ── Celebration popup ─────────────────────────────────────────── */}
-      {showPopup && data && (
+      {showPopup && (
         <PaymentPopup
-          amountSat={data.amount_sat}
+          amountSat={data?.amount_sat ?? amountSats}
           productName={productName}
           method={method}
           onClose={() => setShowPopup(false)}

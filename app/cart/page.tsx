@@ -440,6 +440,18 @@ export default function CartPage() {
                         placeholder="+54 11 ..."
                       />
                     </Field>
+                    <Field label="Tu npub Nostr (opcional)">
+                      <input
+                        className="wapu-input"
+                        value={shipping.npub ?? ""}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, npub: e.target.value.trim() })
+                        }
+                        placeholder="npub1… (para asociar tu pedido sin KYC)"
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
+                    </Field>
                     <Field label="Notas del envío (opcional)">
                       <textarea
                         className="wapu-input"
@@ -551,6 +563,8 @@ export default function CartPage() {
                 productName={summaryName}
                 lnAddress={settings?.lightningAddress}
                 wapuUsername={settings?.wapuUsername}
+                buyerNpub={shipping.npub?.trim() || undefined}
+                buyerName={shipping.name?.trim() || undefined}
               />
 
               <button

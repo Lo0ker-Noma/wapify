@@ -69,7 +69,19 @@ export default function WapuPaymentPanel({
         body: JSON.stringify({ email: email.trim(), password }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Login failed");
+      if (!res.ok) {
+        // Surface a friendlier explanation when the wrong env is the cause
+        const upstream = json.error ?? `HTTP ${res.status}`;
+        if (
+          /user|usuario|not\s*found|email/i.test(upstream) &&
+          !/password/i.test(upstream)
+        ) {
+          throw new Error(
+            `${upstream} — Wapufy usa ${json.base ?? "be-stage.wapu.app"} (STAGING). Si tu cuenta es de producción no funciona acá. Registrate en stage.wapu.app y volvé a intentar.`
+          );
+        }
+        throw new Error(upstream);
+      }
       setAccessToken(json.access_token);
       window.sessionStorage.setItem(TOKEN_KEY, json.access_token);
       setPassword("");
@@ -181,12 +193,26 @@ export default function WapuPaymentPanel({
           }}
         >
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-            🤖 Iniciar sesión en Wapu (staging)
+            🤖 Iniciar sesión en Wapu
           </div>
           <p className="muted" style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>
-            Pagás con tu saldo de Wapu en USDT. El monto a transferir se
-            calcula desde {amountSats} sats.
+            Pagás con tu saldo de Wapu en USDT. El monto se calcula desde {amountSats} sats.
           </p>
+          <div
+            style={{
+              marginTop: 8,
+              padding: "5px 8px",
+              borderRadius: 6,
+              background: "rgba(255,200,0,0.08)",
+              border: "1px solid rgba(255,200,0,0.3)",
+              fontSize: 11,
+              color: "#fde68a",
+              display: "inline-block",
+            }}
+          >
+            ⚠ STAGING — <code style={{ fontSize: 11 }}>be-stage.wapu.app</code>. Usá una cuenta de
+            staging, no tu cuenta de producción.
+          </div>
         </div>
         <Field label="Email Wapu">
           <input

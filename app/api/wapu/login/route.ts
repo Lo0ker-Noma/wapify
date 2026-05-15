@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { wapuLogin } from "@/lib/wapu";
+
+const WAPU_BASE = process.env.WAPU_API_BASE ?? "https://be-stage.wapu.app";
 
 /**
  * POST /api/wapu/login   body: { email, password }
- * Returns { access_token } from Wapu staging. The token is sent back to the
- * client and stored in sessionStorage — subsequent transfer/lookup calls
- * include it in the body and we forward as Bearer to Wapu.
+ * Proxies to Wapu /users/login. Surfaces the exact upstream status code
+ * and error message so the buyer can tell when the issue is "user not on
+ * staging" vs "wrong password" vs "network".
  */
 export async function POST(req: Request) {
   try {
@@ -15,16 +16,37 @@ export async function POST(req: Request) {
     };
     if (!email || !password) {
       return NextResponse.json(
-        { error: "email and password required" },
+        { error: "email y contraseña requeridos", base: WAPU_BASE },
         { status: 400 }
       );
     }
-    const result = await wapuLogin(email, password);
-    return NextResponse.json(result);
+
+    const upstream = await fetch(`${WAPU_BASE}/users/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), password }),
+      cache: "no-store",
+    });
+
+    const body = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      return NextResponse.json(
+        {
+          error: body.error ?? `Wapu respondió ${upstream.status}`,
+          status: upstream.status,
+          base: WAPU_BASE,
+        },
+        { status: upstream.status }
+      );
+    }
+    return NextResponse.json(body);
   } catch (e: any) {
     return NextResponse.json(
-      { error: e?.message ?? "login error" },
-      { status: 401 }
+      {
+        error: `No se pudo conectar a Wapu (${e?.message ?? "network error"})`,
+        base: WAPU_BASE,
+      },
+      { status: 502 }
     );
   }
 }

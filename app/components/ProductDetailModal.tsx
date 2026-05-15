@@ -271,6 +271,17 @@ export default function ProductDetailModal({
                       contactar por DM Nostr si necesita coordinar algo.
                     </p>
 
+                    <p
+                      className="muted"
+                      style={{
+                        fontSize: 11,
+                        margin: "0 0 10px",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      Completá <strong style={{ color: "var(--text)" }}>al menos uno</strong> de los dos campos.
+                    </p>
+
                     <label style={{ display: "block", marginBottom: 10 }}>
                       <span
                         style={{
@@ -283,7 +294,7 @@ export default function ProductDetailModal({
                           marginBottom: 5,
                         }}
                       >
-                        Nombre (opcional)
+                        Nombre
                       </span>
                       <input
                         className="wapu-input"
@@ -305,7 +316,7 @@ export default function ProductDetailModal({
                           marginBottom: 5,
                         }}
                       >
-                        Tu npub *
+                        Tu npub
                       </span>
                       <input
                         className="wapu-input"
@@ -334,12 +345,19 @@ export default function ProductDetailModal({
                       style={{ width: "100%", marginTop: 14 }}
                       onClick={() => {
                         const npubClean = buyerNpub.trim();
-                        if (!npubClean) {
-                          setBuyerError("Ingresá tu npub para identificar el pedido");
+                        const nameClean = buyerName.trim();
+                        if (!npubClean && !nameClean) {
+                          setBuyerError("Ingresá tu nombre o tu npub para identificar el pedido");
                           return;
                         }
-                        if (!npubClean.startsWith("npub1") && !npubClean.startsWith("nprofile")) {
-                          setBuyerError("El npub debe empezar con npub1…");
+                        if (
+                          npubClean &&
+                          !npubClean.startsWith("npub1") &&
+                          !npubClean.startsWith("nprofile")
+                        ) {
+                          setBuyerError(
+                            "El npub debe empezar con npub1… — o dejalo vacío y completá solo el nombre"
+                          );
                           return;
                         }
                         setBuyerError(null);

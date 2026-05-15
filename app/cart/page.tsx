@@ -40,14 +40,20 @@ export default function CartPage() {
   function goPay() {
     setErrors(null);
     if (shipping.pickup) {
-      // Pickup mode: only need a npub to coordinate via Nostr DM
-      if (!shipping.npub?.trim()) {
-        setErrors("Ingresá tu npub para que el admin pueda contactarte por Nostr");
+      // Pickup mode: at least one of name or npub is required so the admin
+      // can identify / contact the buyer.
+      const nameClean = shipping.name?.trim() ?? "";
+      const npubClean = shipping.npub?.trim() ?? "";
+      if (!nameClean && !npubClean) {
+        setErrors("Completá al menos uno: nombre o npub");
         return;
       }
-      const npubClean = shipping.npub.trim();
-      if (!npubClean.startsWith("npub1") && !npubClean.startsWith("nprofile")) {
-        setErrors("El npub debe empezar con npub1… (copialo de tu wallet Nostr)");
+      if (
+        npubClean &&
+        !npubClean.startsWith("npub1") &&
+        !npubClean.startsWith("nprofile")
+      ) {
+        setErrors("El npub debe empezar con npub1… — o dejalo vacío y poné solo nombre");
         return;
       }
     } else {
@@ -320,7 +326,7 @@ export default function CartPage() {
               <div className="card" style={{ marginBottom: 16 }}>
 
                 {shipping.pickup ? (
-                  /* ── Pickup form: solo npub, sin KYC ────────────────── */
+                  /* ── Pickup form: nombre o npub, sin KYC ─────────────── */
                   <>
                     <div
                       style={{
@@ -332,15 +338,27 @@ export default function CartPage() {
                       }}
                     >
                       <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6, color: "var(--primary)" }}>
-                        ⚡ Sin KYC — identificate con tu npub
+                        ⚡ Sin KYC — identificate con nombre o npub
                       </div>
                       <p className="muted" style={{ fontSize: 13, margin: 0, lineHeight: 1.5 }}>
-                        Pagás por Lightning y coordinás el retiro directo con el admin por Nostr DM.
-                        No hace falta nombre, dirección ni email.
+                        Coordinás el retiro directo con el admin. Completá{" "}
+                        <strong style={{ color: "var(--text)" }}>al menos uno</strong> de
+                        los dos campos — no hace falta dirección ni email.
                       </p>
                     </div>
 
-                    <Field label="Tu npub (Nostr) *">
+                    <Field label="Nombre">
+                      <input
+                        className="wapu-input"
+                        value={shipping.name}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, name: e.target.value })
+                        }
+                        placeholder="Cómo te llamamos"
+                      />
+                    </Field>
+
+                    <Field label="Tu npub Nostr">
                       <input
                         className="wapu-input"
                         value={shipping.npub ?? ""}
@@ -352,7 +370,7 @@ export default function CartPage() {
                         autoComplete="off"
                       />
                       <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 5, display: "block" }}>
-                        Copialo desde tu wallet Nostr (Alby, Primal, Damus, etc.)
+                        Si usás Nostr, copialo desde tu wallet (Alby, Primal, Damus…) para que te puedan DM
                       </span>
                     </Field>
 
@@ -507,19 +525,28 @@ export default function CartPage() {
                     <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
                       🫂 Retiro en LaCrypta — sin KYC
                     </div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 12,
-                        color: "var(--primary)",
-                        wordBreak: "break-all",
-                        marginBottom: 4,
-                      }}
-                    >
-                      {shipping.npub}
-                    </div>
+                    {shipping.name?.trim() && (
+                      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                        {shipping.name.trim()}
+                      </div>
+                    )}
+                    {shipping.npub?.trim() && (
+                      <div
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 12,
+                          color: "var(--primary)",
+                          wordBreak: "break-all",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {shipping.npub.trim()}
+                      </div>
+                    )}
                     <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                      El admin te contacta por Nostr DM para coordinar
+                      {shipping.npub?.trim()
+                        ? "El admin te contacta por Nostr DM para coordinar"
+                        : "Coordiná el retiro con el admin en el local"}
                     </div>
                   </>
                 ) : (

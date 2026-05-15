@@ -16,13 +16,13 @@ export async function GET(req: Request) {
       }
       const ars = await satsToArs(sats);
       return NextResponse.json(
-        { sats, ars },
-        { headers: { "Cache-Control": "public, max-age=30" } }
+        { sats, ars, ts: Date.now() },
+        { headers: { "Cache-Control": "no-store" } }
       );
     }
     const rates = await getRates();
     return NextResponse.json(rates, {
-      headers: { "Cache-Control": "public, max-age=30" },
+      headers: { "Cache-Control": "no-store" },
     });
   } catch (e: any) {
     return NextResponse.json(

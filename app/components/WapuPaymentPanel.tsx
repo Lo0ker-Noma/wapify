@@ -27,6 +27,7 @@ export default function WapuPaymentPanel({
   const [password, setPassword] = useState("");
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [ars, setArs] = useState<number | null>(null);
+  const [arsUpdatedAt, setArsUpdatedAt] = useState<number | null>(null);
   const [usdt, setUsdt] = useState<number | null>(null);
   const [txId, setTxId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,19 +45,50 @@ export default function WapuPaymentPanel({
     }
   }, []);
 
-  // Fetch ARS preview
+  // Fetch ARS preview and keep it fresh — Wapu rates can move fast and we
+  // don't want the buyer staring at a stale number. Hits /api/rates (now
+  // Cache-Control: no-store) every 5s while the panel is mounted and paused
+  // once the payment is settled.
   useEffect(() => {
     if (amountSats <= 0) return;
     let cancelled = false;
-    fetch(`/api/rates?sats=${amountSats}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (cancelled || !j) return;
-        if (typeof j.ars === "number") setArs(j.ars);
-      })
-      .catch(() => { /* ignore */ });
-    return () => { cancelled = true; };
-  }, [amountSats]);
+    const ac = new AbortController();
+
+    async function fetchRate() {
+      try {
+        const res = await fetch(
+          `/api/rates?sats=${amountSats}&t=${Date.now()}`,
+          { cache: "no-store", signal: ac.signal }
+        );
+        if (!res.ok || cancelled) return;
+        const j = await res.json();
+        if (cancelled || typeof j?.ars !== "number") return;
+        setArs(j.ars);
+        setArsUpdatedAt(Date.now());
+      } catch {
+        /* swallow — show stale value until next tick */
+      }
+    }
+
+    // Initial fetch
+    fetchRate();
+    // Refresh every 5s unless we're already paid
+    const id = phase === "paid" ? null : setInterval(fetchRate, 5000);
+    return () => {
+      cancelled = true;
+      ac.abort();
+      if (id) clearInterval(id);
+    };
+  }, [amountSats, phase]);
+
+  // Tick once a second so the "actualizado hace Xs" caption keeps counting
+  // even when no fetch fires.
+  const [, setNow] = useState(0);
+  useEffect(() => {
+    if (phase === "paid") return;
+    const id = setInterval(() => setNow((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [phase]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -178,13 +210,14 @@ export default function WapuPaymentPanel({
   }
 
   // ── Always-visible ARS conversion card ──────────────────────────────────
+  const secondsAgo = arsUpdatedAt
+    ? Math.floor((Date.now() - arsUpdatedAt) / 1000)
+    : null;
+
   const arsCard = phase !== "paid" && (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
+        position: "relative",
         padding: "10px 14px",
         marginBottom: 14,
         borderRadius: 10,
@@ -192,60 +225,95 @@ export default function WapuPaymentPanel({
         border: "1px solid rgba(0,255,157,0.18)",
       }}
     >
-      <div>
-        <div
-          style={{
-            fontSize: 10,
-            textTransform: "uppercase",
-            letterSpacing: 1.2,
-            color: "var(--muted)",
-            fontWeight: 600,
-            marginBottom: 2,
-          }}
-        >
-          Equivale a
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+              color: "var(--muted)",
+              fontWeight: 600,
+              marginBottom: 2,
+            }}
+          >
+            Equivale a
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 20,
+              fontWeight: 700,
+              color: "var(--primary)",
+              lineHeight: 1.1,
+            }}
+          >
+            {ars !== null
+              ? `$ ${ars.toLocaleString("es-AR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })} ARS`
+              : "…"}
+          </div>
         </div>
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 20,
-            fontWeight: 700,
-            color: "var(--primary)",
-            lineHeight: 1.1,
-          }}
-        >
-          {ars !== null
-            ? `$ ${ars.toLocaleString("es-AR", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} ARS`
-            : "…"}
+        <div style={{ textAlign: "right" }}>
+          <div
+            style={{
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+              color: "var(--muted)",
+              fontWeight: 600,
+              marginBottom: 2,
+            }}
+          >
+            Pagás
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 16,
+              fontWeight: 700,
+              color: "var(--text)",
+              lineHeight: 1.1,
+            }}
+          >
+            ⚡ {amountSats.toLocaleString("es-AR")} sats
+          </div>
         </div>
       </div>
-      <div style={{ textAlign: "right" }}>
-        <div
+      <div
+        style={{
+          fontSize: 10,
+          color: "var(--muted)",
+          marginTop: 8,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        <span
           style={{
-            fontSize: 10,
-            textTransform: "uppercase",
-            letterSpacing: 1.2,
-            color: "var(--muted)",
-            fontWeight: 600,
-            marginBottom: 2,
+            display: "inline-block",
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            background: "var(--primary)",
+            animation: "pulse 1.6s ease-in-out infinite",
           }}
-        >
-          Pagás
-        </div>
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 16,
-            fontWeight: 700,
-            color: "var(--text)",
-            lineHeight: 1.1,
-          }}
-        >
-          ⚡ {amountSats.toLocaleString("es-AR")} sats
-        </div>
+        />
+        {secondsAgo === null
+          ? "Cargando cotización Wapu…"
+          : secondsAgo === 0
+          ? "Cotización actualizada ahora"
+          : `Cotización actualizada hace ${secondsAgo}s · refresca cada 5s`}
       </div>
     </div>
   );

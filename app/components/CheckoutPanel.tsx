@@ -467,8 +467,8 @@ export default function CheckoutPanel({
           <div style={{ fontWeight: 700, color: "var(--primary)", fontSize: 16 }}>
             Pago confirmado
           </div>
-          <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-            {data.amount_sat.toLocaleString()} sats recibidos
+          <div style={{ fontSize: 13, marginTop: 4, color: "var(--bitcoin)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+            ⚡ {data.amount_sat.toLocaleString()} sats recibidos
           </div>
         </div>
       )}
@@ -729,7 +729,10 @@ function PaymentPopup({
           </p>
 
           <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 28 }}>
-            ⚡ {amountSat.toLocaleString("es-AR")} sats · {method === "wapu" ? "Wapu · LUD-21" : "Lightning · NIP-57"}
+            <span style={{ color: "var(--bitcoin)", fontWeight: 700 }}>
+              ⚡ {amountSat.toLocaleString("es-AR")} sats
+            </span>{" "}
+            · {method === "wapu" ? "Wapu · LUD-21" : "Lightning · NIP-57"}
           </p>
 
           <button

@@ -281,7 +281,7 @@ export default function WapuPaymentPanel({
               fontFamily: "var(--font-mono)",
               fontSize: 16,
               fontWeight: 700,
-              color: "var(--text)",
+              color: "var(--bitcoin)",
               lineHeight: 1.1,
             }}
           >
@@ -545,7 +545,7 @@ function Row({
           fontSize: mono ? 18 : 14,
           fontWeight: mono ? 700 : 500,
           fontFamily: mono ? "var(--font-mono)" : undefined,
-          color: mono ? "var(--primary)" : "var(--text)",
+          color: mono ? "var(--bitcoin)" : "var(--text)",
           textAlign: "right",
           wordBreak: "break-word",
         }}

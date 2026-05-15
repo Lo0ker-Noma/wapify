@@ -181,7 +181,7 @@ export default function ProductDetailModal({
                 fontFamily: "var(--font-mono)",
                 fontSize: 22,
                 fontWeight: 700,
-                color: "var(--primary)",
+                color: "var(--bitcoin)",
                 marginBottom: 18,
               }}
             >

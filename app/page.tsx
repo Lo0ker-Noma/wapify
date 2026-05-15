@@ -140,7 +140,7 @@ export default function HomePage() {
             <div className="mock-window">
               <div className="bar"><span /><span /><span /></div>
               <div className="body">
-                <div className="title accent" style={{ color: "var(--primary)" }}>⚡ 4.500 sats</div>
+                <div className="title accent" style={{ color: "var(--bitcoin)" }}>⚡ 4.500 sats</div>
                 <div style={{ marginTop: 12, color: "var(--muted)" }}>lookerlabs@wapu.app</div>
                 <div style={{
                   marginTop: 16,

@@ -353,7 +353,7 @@ export default function StorePage() {
                 fontSize: 15,
                 marginBottom: 16,
                 fontFamily: "var(--font-mono)",
-                color: "var(--primary)",
+                color: "var(--bitcoin)",
                 fontWeight: 600,
               }}
             >

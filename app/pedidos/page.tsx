@@ -202,7 +202,7 @@ function OrderRow({ order }: { order: Order }) {
             fontFamily: "var(--font-mono)",
             fontSize: 18,
             fontWeight: 700,
-            color: "var(--primary)",
+            color: "var(--bitcoin)",
             marginBottom: 4,
           }}
         >
@@ -255,6 +255,7 @@ function Stat({
           fontFamily: mono ? "var(--font-mono)" : "var(--font-display)",
           fontSize: mono ? 22 : 28,
           fontWeight: 700,
+          color: mono ? "var(--bitcoin)" : "var(--text)",
         }}
       >
         {value}

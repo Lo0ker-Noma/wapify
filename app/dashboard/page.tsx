@@ -267,7 +267,7 @@ export default function DashboardPage() {
               style={{
                 fontFamily: "var(--font-mono)",
                 fontSize: 13,
-                color: "var(--primary)",
+                color: "var(--bitcoin)",
               }}
             >
               ⚡ {p.price} sats
@@ -492,7 +492,7 @@ function Stat({
           fontFamily: mono ? "var(--font-mono)" : "var(--font-display)",
           fontSize: mono ? 24 : 28,
           fontWeight: 700,
-          color: "var(--text)",
+          color: mono ? "var(--bitcoin)" : "var(--text)",
           wordBreak: "break-all",
         }}
       >

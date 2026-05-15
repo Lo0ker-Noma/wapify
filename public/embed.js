@@ -24,12 +24,14 @@
   var theme = cfg.theme || {
     accent: "#00ff9d",
     accent2: "#9945ff",
+    bitcoin: "#f7931a",
     bg: "#0a0a0a",
     fg: "#ffffff",
     fgMuted: "#a0a0a0",
     cardBg: "#111111",
     border: "rgba(255,255,255,0.06)",
   };
+  if (!theme.bitcoin) theme.bitcoin = "#f7931a";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -76,7 +78,7 @@
       theme.fgMuted +
       ";font-style:italic;margin:0 0 8px;line-height:1.4}" +
       ".wf-price{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px;font-weight:600;color:" +
-      theme.accent +
+      theme.bitcoin +
       ";margin:0 0 12px}" +
       ".wf-btn{display:block;text-align:center;padding:10px 14px;border-radius:8px;background:" +
       theme.accent +

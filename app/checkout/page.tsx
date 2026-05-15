@@ -31,7 +31,10 @@ function CheckoutContent() {
         Escaneá y pagá
       </h1>
       <p className="muted" style={{ fontSize: 15, marginBottom: 24 }}>
-        {productName} · ⚡ {amountSats.toLocaleString("es-AR")} sats
+        {productName} ·{" "}
+        <span style={{ color: "var(--bitcoin)", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+          ⚡ {amountSats.toLocaleString("es-AR")} sats
+        </span>
       </p>
 
       <CheckoutPanel

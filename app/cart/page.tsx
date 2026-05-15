@@ -233,7 +233,7 @@ export default function CartPage() {
                         style={{
                           fontFamily: "var(--font-mono)",
                           fontWeight: 700,
-                          color: "var(--primary)",
+                          color: "var(--bitcoin)",
                         }}
                       >
                         ⚡ {it.price * it.qty}
@@ -264,7 +264,7 @@ export default function CartPage() {
                       fontFamily: "var(--font-mono)",
                       fontSize: 26,
                       fontWeight: 700,
-                      color: "var(--primary)",
+                      color: "var(--bitcoin)",
                     }}
                   >
                     ⚡ {totalSats.toLocaleString("es-AR")} sats

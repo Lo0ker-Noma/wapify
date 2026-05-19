@@ -153,7 +153,9 @@ export default function WapuPaymentPanel({
         amountSats,
         invoice: "",
         verifyUrl: "",
-        lnAddress: `${receiverUsername}@wapu.app`,
+        // Wapu has nothing to do with Lightning — lnAddress stays empty.
+        lnAddress: "",
+        wapuReceiver: receiverUsername,
         buyerNpub,
         buyerName,
         buyerNote,

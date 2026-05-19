@@ -170,15 +170,25 @@ function OrderRow({ order }: { order: Order }) {
               flexWrap: "wrap",
             }}
           >
-            <span>{shortInvoice(order.invoice)}</span>
-            <span>·</span>
-            <span>{fmtTime(order.createdAt)}</span>
-            {order.lnAddress && (
+            {/* Lightning shows invoice prefix; Wapu has no invoice. */}
+            {order.paymentMethod !== "wapu" && (
               <>
+                <span>{shortInvoice(order.invoice)}</span>
                 <span>·</span>
-                <span>→ {order.lnAddress}</span>
               </>
             )}
+            <span>{fmtTime(order.createdAt)}</span>
+            {order.paymentMethod === "wapu" && order.wapuReceiver ? (
+              <>
+                <span>·</span>
+                <span>🤖 → @{order.wapuReceiver}</span>
+              </>
+            ) : order.lnAddress ? (
+              <>
+                <span>·</span>
+                <span>⚡ → {order.lnAddress}</span>
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -311,10 +321,22 @@ function OrderRow({ order }: { order: Order }) {
           {order.paymentMethod && (
             <DetailRow
               label="Método"
-              value={order.paymentMethod === "wapu" ? "Wapu (interno)" : "Lightning Network"}
+              value={
+                order.paymentMethod === "wapu"
+                  ? "Wapu (transferencia interna USDT)"
+                  : "Lightning Network"
+              }
             />
           )}
-          {order.invoice && (
+          {/* Receiver per rail: Wapu shows @usertag, Lightning shows ln address. */}
+          {order.paymentMethod === "wapu" && order.wapuReceiver && (
+            <DetailRow label="Wapu" value={`@${order.wapuReceiver}`} mono />
+          )}
+          {order.paymentMethod !== "wapu" && order.lnAddress && (
+            <DetailRow label="Lightning Address" value={order.lnAddress} mono />
+          )}
+          {/* Invoice only exists on Lightning orders. */}
+          {order.paymentMethod !== "wapu" && order.invoice && (
             <DetailRow
               label="Invoice"
               value={`${order.invoice.slice(0, 28)}…${order.invoice.slice(-12)}`}

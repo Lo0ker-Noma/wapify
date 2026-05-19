@@ -6,9 +6,12 @@ export type Order = {
   id: string;
   productName: string;
   amountSats: number;
-  invoice: string; // bolt11 (empty for Wapu inner_transfer)
+  invoice: string; // bolt11 — Lightning only, empty string for Wapu orders
   verifyUrl: string;
+  /** Seller Lightning Address. ONLY for Lightning payments. Empty for Wapu. */
   lnAddress: string;
+  /** Seller Wapu usertag. ONLY for Wapu inner_transfer. Empty for Lightning. */
+  wapuReceiver?: string;
   status: OrderStatus;
   createdAt: number;
   paidAt?: number;
@@ -19,7 +22,7 @@ export type Order = {
    *  notes, etc.) — surfaced on the admin's /pedidos page so they can
    *  coordinate. */
   buyerNote?: string;
-  /** Receipt: paid via Lightning, Wapu inner-transfer, etc. */
+  /** Payment rail used. */
   paymentMethod?: "wapu" | "lightning";
 };
 
@@ -93,6 +96,7 @@ export function recordOrder(o: Omit<Order, "id" | "createdAt" | "status"> & { st
     invoice: o.invoice,
     verifyUrl: o.verifyUrl,
     lnAddress: o.lnAddress,
+    wapuReceiver: o.wapuReceiver,
     buyerNpub: o.buyerNpub,
     buyerName: o.buyerName,
     buyerNote: o.buyerNote,

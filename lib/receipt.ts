@@ -32,7 +32,23 @@ export function buildReceiptHtml(order: Order, storeName = "LaCrypta"): string {
     ? `<div class="note">📝 <strong>Nota del cliente:</strong> ${esc(order.buyerNote.trim())}</div>`
     : "";
 
-  const methodLabel = order.paymentMethod === "wapu" ? "Wapu (interno)" : "Lightning Network";
+  const methodLabel = order.paymentMethod === "wapu" ? "Wapu (transferencia interna USDT)" : "Lightning Network";
+
+  // Receiver row — different concept per rail. Lightning shows the LN
+  // Address; Wapu shows the @usertag. They're independent systems.
+  const receiverRow =
+    order.paymentMethod === "wapu"
+      ? order.wapuReceiver
+        ? `<div class="row"><span class="lbl">Wapu</span><span class="val mono">@${esc(order.wapuReceiver)}</span></div>`
+        : ""
+      : order.lnAddress
+        ? `<div class="row"><span class="lbl">Lightning Address</span><span class="val mono">${esc(order.lnAddress)}</span></div>`
+        : "";
+
+  const invoiceRow =
+    order.paymentMethod !== "wapu" && order.invoice
+      ? `<div class="row"><span class="lbl">Invoice</span><span class="val mono">${esc(shortInvoice(order.invoice))}</span></div>`
+      : "";
 
   return `<!doctype html>
 <html lang="es">
@@ -80,8 +96,8 @@ export function buildReceiptHtml(order: Order, storeName = "LaCrypta"): string {
       ${buyerLabel}
       ${buyerNpubRow}
       <div class="row"><span class="lbl">Método</span><span class="val">${methodLabel}</span></div>
-      ${order.lnAddress ? `<div class="row"><span class="lbl">Recibe</span><span class="val mono">${esc(order.lnAddress)}</span></div>` : ""}
-      ${order.invoice ? `<div class="row"><span class="lbl">Invoice</span><span class="val mono">${esc(shortInvoice(order.invoice))}</span></div>` : ""}
+      ${receiverRow}
+      ${invoiceRow}
       <div class="row"><span class="lbl">ID de orden</span><span class="val mono">${esc(order.id)}</span></div>
       <div class="row"><span class="lbl">Generado</span><span class="val">${fmtDate(order.createdAt)}</span></div>
       ${order.paidAt ? `<div class="row"><span class="lbl">Pagado</span><span class="val">${fmtDate(order.paidAt)}</span></div>` : ""}

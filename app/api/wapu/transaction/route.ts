@@ -17,9 +17,11 @@ export async function GET(req: Request) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (e: any) {
+    const msg = e?.message ?? "tx lookup error";
+    const isAuth = /jwt|token|signature|expir|unauthor/i.test(msg);
     return NextResponse.json(
-      { error: e?.message ?? "tx lookup error" },
-      { status: 502 }
+      { error: msg },
+      { status: isAuth ? 401 : 502 }
     );
   }
 }

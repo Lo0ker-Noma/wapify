@@ -36,9 +36,14 @@ export async function POST(req: Request) {
     );
     return NextResponse.json({ transaction: tx, amountUsdt: amountUsdtRounded });
   } catch (e: any) {
+    const msg = e?.message ?? "transfer error";
+    // Pass through 401 on auth errors so the client can clear the token
+    // and force re-login. Wapu's "Invalid JWT token" / "Signature has
+    // expired" come back as exceptions from wapuInnerTransfer.
+    const isAuth = /jwt|token|signature|expir|unauthor/i.test(msg);
     return NextResponse.json(
-      { error: e?.message ?? "transfer error" },
-      { status: 502 }
+      { error: msg },
+      { status: isAuth ? 401 : 502 }
     );
   }
 }

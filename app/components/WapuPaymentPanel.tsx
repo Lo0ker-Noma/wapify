@@ -7,6 +7,33 @@ type Phase = "login" | "confirm" | "paying" | "polling" | "paid" | "error";
 
 const TOKEN_KEY = "wapufy:wapuToken";
 
+/**
+ * Decode a JWT's payload and check if it's already expired (or expires in
+ * the next 10 seconds — we add a small grace window so we don't try to use
+ * a token that's about to die mid-request).
+ */
+function isJwtExpired(token: string): boolean {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return true;
+    let payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    while (payload.length % 4 !== 0) payload += "=";
+    const json = JSON.parse(atob(payload));
+    if (typeof json.exp !== "number") return false;
+    return Date.now() / 1000 + 10 >= json.exp;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * True if the upstream error string indicates an auth problem
+ * (expired token, invalid signature, malformed JWT, missing claims).
+ */
+function isAuthError(msg: string): boolean {
+  return /jwt|token|signature|expir|unauthor/i.test(msg);
+}
+
 export default function WapuPaymentPanel({
   amountSats,
   productName,
@@ -36,15 +63,19 @@ export default function WapuPaymentPanel({
   const [orderId, setOrderId] = useState<string | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Restore JWT from sessionStorage on mount so the buyer doesn't re-login
-  // for each item in the same browser session.
+  // Restore JWT from sessionStorage on mount — but only if it's still valid.
+  // Wapu access tokens expire in ~15 min; an expired token would cause
+  // "Invalid JWT token" later. Decode the exp claim and bail if past.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = window.sessionStorage.getItem(TOKEN_KEY);
-    if (stored) {
-      setAccessToken(stored);
-      setPhase("confirm");
+    if (!stored) return;
+    if (isJwtExpired(stored)) {
+      window.sessionStorage.removeItem(TOKEN_KEY);
+      return;
     }
+    setAccessToken(stored);
+    setPhase("confirm");
   }, []);
 
   // Fetch ARS preview and keep it fresh — Wapu rates can move fast and we
@@ -129,6 +160,17 @@ export default function WapuPaymentPanel({
   async function handlePay() {
     if (!accessToken) return;
     setError(null);
+
+    // Pre-flight: if our token is already expired, skip the network round
+    // trip and force a fresh login.
+    if (isJwtExpired(accessToken)) {
+      window.sessionStorage.removeItem(TOKEN_KEY);
+      setAccessToken(null);
+      setError("Tu sesión Wapu expiró (15 min). Volvé a iniciar sesión.");
+      setPhase("login");
+      return;
+    }
+
     setPhase("paying");
     try {
       const res = await fetch("/api/wapu/transfer", {
@@ -141,7 +183,18 @@ export default function WapuPaymentPanel({
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Transfer failed");
+      if (!res.ok) {
+        const msg = json.error ?? `Transfer failed (${res.status})`;
+        // 401 or auth-flavoured error → wipe token and bounce to login
+        if (res.status === 401 || isAuthError(msg)) {
+          window.sessionStorage.removeItem(TOKEN_KEY);
+          setAccessToken(null);
+          setError("Tu sesión Wapu expiró. Volvé a iniciar sesión y reintentá.");
+          setPhase("login");
+          return;
+        }
+        throw new Error(msg);
+      }
 
       const tx = json.transaction;
       setUsdt(json.amountUsdt);
@@ -188,6 +241,15 @@ export default function WapuPaymentPanel({
         );
         const json = await res.json();
         if (stopped) return;
+        // Auth error during polling — drop the token and bounce to login
+        if (res.status === 401 || (json?.error && isAuthError(json.error))) {
+          stopped = true;
+          window.sessionStorage.removeItem(TOKEN_KEY);
+          setAccessToken(null);
+          setError("Tu sesión Wapu expiró mientras esperabamos confirmación. Volvé a entrar.");
+          setPhase("login");
+          return;
+        }
         if (res.ok && json.status === "Completed") {
           if (orderId) markOrderPaid(orderId);
           setPhase("paid");

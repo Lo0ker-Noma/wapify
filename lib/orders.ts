@@ -15,6 +15,12 @@ export type Order = {
   /** Optional Nostr identity of the buyer — captured at checkout */
   buyerNpub?: string;
   buyerName?: string;
+  /** Free-form note left by the buyer at checkout (shipping notes, pickup
+   *  notes, etc.) — surfaced on the admin's /pedidos page so they can
+   *  coordinate. */
+  buyerNote?: string;
+  /** Receipt: paid via Lightning, Wapu inner-transfer, etc. */
+  paymentMethod?: "wapu" | "lightning";
 };
 
 const KEY = "wapufy:orders";
@@ -89,6 +95,8 @@ export function recordOrder(o: Omit<Order, "id" | "createdAt" | "status"> & { st
     lnAddress: o.lnAddress,
     buyerNpub: o.buyerNpub,
     buyerName: o.buyerName,
+    buyerNote: o.buyerNote,
+    paymentMethod: o.paymentMethod,
   };
   const all = loadOrders();
   saveOrders([order, ...all]);

@@ -30,6 +30,7 @@ export default function CheckoutPanel({
   compact,
   buyerNpub,
   buyerName,
+  buyerNote,
 }: {
   amountSats: number;
   productName: string;
@@ -38,6 +39,7 @@ export default function CheckoutPanel({
   compact?: boolean;
   buyerNpub?: string;
   buyerName?: string;
+  buyerNote?: string;
 }) {
   const initialMethod: Method = wapuUsername ? "wapu" : "lightning";
   const [method, setMethod] = useState<Method>(initialMethod);
@@ -125,6 +127,8 @@ export default function CheckoutPanel({
           lnAddress: json.ln_address,
           buyerNpub,
           buyerName,
+          buyerNote,
+          paymentMethod: "lightning",
         });
         setOrderId(order.id);
       } catch (e: any) {
@@ -313,6 +317,7 @@ export default function CheckoutPanel({
           receiverUsername={wapuUsername}
           buyerNpub={buyerNpub}
           buyerName={buyerName}
+          buyerNote={buyerNote}
           onPaid={() => setShowPopup(true)}
         />
       )}
@@ -479,6 +484,7 @@ export default function CheckoutPanel({
           amountSat={data?.amount_sat ?? amountSats}
           productName={productName}
           method={method}
+          orderId={orderId}
           onClose={() => setShowPopup(false)}
         />
       )}
@@ -582,18 +588,34 @@ function PaymentPopup({
   amountSat,
   productName,
   method,
+  orderId,
   onClose,
 }: {
   amountSat: number;
   productName: string;
   method: "wapu" | "lightning";
+  orderId: string | null;
   onClose: () => void;
 }) {
-  // Auto-close after 6 seconds
+  // Auto-close after 12 seconds — longer than before so the buyer has
+  // time to find and click the receipt button.
   useEffect(() => {
-    const t = setTimeout(onClose, 6000);
+    const t = setTimeout(onClose, 12000);
     return () => clearTimeout(t);
   }, [onClose]);
+
+  function handleReceipt() {
+    if (!orderId) return;
+    // Re-read the order from storage so we get the latest fields
+    // (status === "paid", paidAt, buyerName/Npub/Note, paymentMethod).
+    import("@/lib/orders").then(({ loadOrders }) => {
+      const order = loadOrders().find((o) => o.id === orderId);
+      if (!order) return;
+      import("@/lib/receipt").then(({ downloadReceipt }) =>
+        downloadReceipt(order)
+      );
+    });
+  }
 
   // Close on Escape
   useEffect(() => {
@@ -735,6 +757,23 @@ function PaymentPopup({
             · {method === "wapu" ? "Wapu · LUD-21" : "Lightning · NIP-57"}
           </p>
 
+          {orderId && (
+            <button
+              onClick={handleReceipt}
+              className="btn btn-outline"
+              style={{
+                width: "100%",
+                fontSize: 14,
+                padding: "12px 0",
+                marginBottom: 8,
+                borderColor: "rgba(247,147,26,0.5)",
+                color: "var(--bitcoin)",
+              }}
+            >
+              📄 Descargar recibo
+            </button>
+          )}
+
           <button
             onClick={onClose}
             className="btn btn-primary"
@@ -749,7 +788,7 @@ function PaymentPopup({
             height: 3,
             background: "var(--primary)",
             borderRadius: "0 0 0 24px",
-            animation: "wfy-progress 6s linear forwards",
+            animation: "wfy-progress 12s linear forwards",
           }} />
         </div>
       </div>

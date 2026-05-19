@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../components/AuthProvider";
 import { Order, loadOrders } from "@/lib/orders";
+import { downloadReceipt } from "@/lib/receipt";
 
 function fmtTime(ms: number): string {
   const diffSec = Math.floor((Date.now() - ms) / 1000);
@@ -105,121 +106,229 @@ export default function PedidosPage() {
 
 function OrderRow({ order }: { order: Order }) {
   const isPaid = order.status === "paid";
+  const hasBuyer = !!(order.buyerName?.trim() || order.buyerNpub?.trim());
+  const hasNote = !!order.buyerNote?.trim();
+  const [open, setOpen] = useState(false);
+
   return (
     <div
       className="card"
       style={{
-        display: "grid",
-        gridTemplateColumns: "auto 1fr auto",
-        gap: 20,
-        alignItems: "center",
         padding: 18,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
       }}
     >
+      {/* Top row */}
       <div
         style={{
-          width: 52,
-          height: 52,
-          borderRadius: 10,
-          background: isPaid
-            ? "linear-gradient(135deg, rgba(0,255,157,0.18), rgba(0,255,157,0.08))"
-            : "rgba(255,255,255,0.04)",
-          border: isPaid
-            ? "1px solid rgba(0,255,157,0.3)"
-            : "1px solid rgba(255,255,255,0.08)",
-          display: "flex",
+          display: "grid",
+          gridTemplateColumns: "auto 1fr auto",
+          gap: 20,
           alignItems: "center",
-          justifyContent: "center",
-          fontSize: 22,
         }}
       >
-        {isPaid ? "✓" : "⏳"}
-      </div>
-
-      <div style={{ minWidth: 0 }}>
         <div
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 16,
-            fontWeight: 600,
-            marginBottom: 4,
-          }}
-        >
-          {order.productName}
-        </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: "var(--muted)",
-            fontFamily: "var(--font-mono)",
+            width: 52,
+            height: 52,
+            borderRadius: 10,
+            background: isPaid
+              ? "linear-gradient(135deg, rgba(0,255,157,0.18), rgba(0,255,157,0.08))"
+              : "rgba(255,255,255,0.04)",
+            border: isPaid
+              ? "1px solid rgba(0,255,157,0.3)"
+              : "1px solid rgba(255,255,255,0.08)",
             display: "flex",
-            gap: 12,
-            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 22,
           }}
         >
-          <span>{shortInvoice(order.invoice)}</span>
-          <span>·</span>
-          <span>{fmtTime(order.createdAt)}</span>
-          <span>·</span>
-          <span>→ {order.lnAddress}</span>
+          {isPaid ? "✓" : "⏳"}
         </div>
-        {(order.buyerName || order.buyerNpub) && (
+
+        <div style={{ minWidth: 0 }}>
           <div
             style={{
-              marginTop: 8,
-              padding: "6px 10px",
-              borderRadius: 8,
-              background: "rgba(0,255,157,0.06)",
-              border: "1px solid rgba(0,255,157,0.18)",
+              fontFamily: "var(--font-display)",
+              fontSize: 16,
+              fontWeight: 600,
+              marginBottom: 4,
+            }}
+          >
+            {order.productName}
+          </div>
+          <div
+            style={{
               fontSize: 12,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
+              color: "var(--muted)",
+              fontFamily: "var(--font-mono)",
+              display: "flex",
+              gap: 12,
               flexWrap: "wrap",
             }}
           >
-            <span style={{ color: "var(--primary)", fontWeight: 700 }}>
-              {order.buyerName || "🔑 npub"}
-            </span>
-            {order.buyerNpub && (
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  color: "var(--text-secondary)",
-                  fontSize: 11,
-                }}
-              >
-                {order.buyerNpub.slice(0, 12)}…{order.buyerNpub.slice(-8)}
-              </span>
+            <span>{shortInvoice(order.invoice)}</span>
+            <span>·</span>
+            <span>{fmtTime(order.createdAt)}</span>
+            {order.lnAddress && (
+              <>
+                <span>·</span>
+                <span>→ {order.lnAddress}</span>
+              </>
             )}
           </div>
+        </div>
+
+        <div style={{ textAlign: "right" }}>
+          <div
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 18,
+              fontWeight: 700,
+              color: "var(--bitcoin)",
+              marginBottom: 4,
+            }}
+          >
+            ⚡ {order.amountSats}
+          </div>
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: isPaid ? "#00ff9d" : "#fbbf24",
+            }}
+          >
+            {isPaid ? "Pagado" : "Pendiente"}
+          </div>
+        </div>
+      </div>
+
+      {/* Buyer chip (always visible if any data) */}
+      {hasBuyer && (
+        <div
+          style={{
+            padding: "8px 12px",
+            borderRadius: 10,
+            background: "rgba(0,255,157,0.06)",
+            border: "1px solid rgba(0,255,157,0.18)",
+            fontSize: 13,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 14 }}>👤</span>
+          {order.buyerName?.trim() && (
+            <span style={{ color: "var(--text)", fontWeight: 700 }}>
+              {order.buyerName.trim()}
+            </span>
+          )}
+          {order.buyerNpub?.trim() && (
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--text-secondary)",
+                fontSize: 11,
+                wordBreak: "break-all",
+              }}
+              title={order.buyerNpub}
+            >
+              🔑 {order.buyerNpub.slice(0, 16)}…{order.buyerNpub.slice(-10)}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Detail toggle + actions */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {(hasNote || order.invoice || order.paidAt) && (
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="btn btn-outline"
+            style={{ fontSize: 12, padding: "6px 12px" }}
+          >
+            {open ? "▴ Ocultar detalle" : "▾ Ver detalle"}
+          </button>
+        )}
+        {isPaid && (
+          <button
+            onClick={() => downloadReceipt(order)}
+            className="btn btn-outline"
+            style={{
+              fontSize: 12,
+              padding: "6px 12px",
+              borderColor: "rgba(247,147,26,0.4)",
+              color: "var(--bitcoin)",
+            }}
+          >
+            📄 Descargar recibo
+          </button>
         )}
       </div>
 
-      <div style={{ textAlign: "right" }}>
+      {/* Expanded detail */}
+      {open && (
         <div
           style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 18,
-            fontWeight: 700,
-            color: "var(--bitcoin)",
-            marginBottom: 4,
+            padding: 14,
+            borderRadius: 10,
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            fontSize: 13,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
           }}
         >
-          ⚡ {order.amountSats}
+          {hasNote && (
+            <div
+              style={{
+                padding: "10px 12px",
+                background: "rgba(247,147,26,0.08)",
+                borderLeft: "3px solid var(--bitcoin)",
+                borderRadius: 4,
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
+            >
+              📝 <strong>Nota del cliente:</strong>{" "}
+              <span style={{ color: "var(--text-secondary)" }}>
+                {order.buyerNote!.trim()}
+              </span>
+            </div>
+          )}
+          <DetailRow
+            label="ID de orden"
+            value={order.id}
+            mono
+          />
+          {order.paymentMethod && (
+            <DetailRow
+              label="Método"
+              value={order.paymentMethod === "wapu" ? "Wapu (interno)" : "Lightning Network"}
+            />
+          )}
+          {order.invoice && (
+            <DetailRow
+              label="Invoice"
+              value={`${order.invoice.slice(0, 28)}…${order.invoice.slice(-12)}`}
+              mono
+            />
+          )}
+          {order.paidAt && (
+            <DetailRow
+              label="Confirmado"
+              value={new Date(order.paidAt).toLocaleString("es-AR")}
+            />
+          )}
         </div>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 1,
-            textTransform: "uppercase",
-            color: isPaid ? "#00ff9d" : "#fbbf24",
-          }}
-        >
-          {isPaid ? "Pagado" : "Pendiente"}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -260,6 +369,40 @@ function Stat({
       >
         {value}
       </div>
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 12,
+        fontSize: 12,
+      }}
+    >
+      <span style={{ color: "var(--muted)" }}>{label}</span>
+      <span
+        style={{
+          color: "var(--text)",
+          fontFamily: mono ? "var(--font-mono)" : undefined,
+          textAlign: "right",
+          wordBreak: "break-all",
+          maxWidth: "70%",
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

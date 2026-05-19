@@ -13,6 +13,7 @@ export default function WapuPaymentPanel({
   receiverUsername,
   buyerNpub,
   buyerName,
+  buyerNote,
   onPaid,
 }: {
   amountSats: number;
@@ -20,6 +21,7 @@ export default function WapuPaymentPanel({
   receiverUsername: string;
   buyerNpub?: string;
   buyerName?: string;
+  buyerNote?: string;
   onPaid?: () => void;
 }) {
   const [phase, setPhase] = useState<Phase>("login");
@@ -154,6 +156,8 @@ export default function WapuPaymentPanel({
         lnAddress: `${receiverUsername}@wapu.app`,
         buyerNpub,
         buyerName,
+        buyerNote,
+        paymentMethod: "wapu",
       });
       setOrderId(order.id);
 
@@ -485,6 +489,28 @@ export default function WapuPaymentPanel({
           <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
             ≈ $ {ars.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
           </div>
+        )}
+        {orderId && (
+          <button
+            onClick={() => {
+              import("@/lib/orders").then(({ loadOrders }) => {
+                const order = loadOrders().find((o) => o.id === orderId);
+                if (!order) return;
+                import("@/lib/receipt").then(({ downloadReceipt }) =>
+                  downloadReceipt(order)
+                );
+              });
+            }}
+            className="btn btn-outline"
+            style={{
+              marginTop: 14,
+              borderColor: "rgba(247,147,26,0.5)",
+              color: "var(--bitcoin)",
+              fontSize: 13,
+            }}
+          >
+            📄 Descargar recibo
+          </button>
         )}
       </div>
     );

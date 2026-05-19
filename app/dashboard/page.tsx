@@ -12,7 +12,7 @@ import { loadOrders, Order } from "@/lib/orders";
 import { loadStoreMeta, StoreMeta } from "@/lib/store-meta";
 
 export default function DashboardPage() {
-  const { pubkey, isAdmin, profile, loading, logout } = useAuth();
+  const { pubkey, npub, isAdmin, profile, loading, logout } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<StoreSettings | null>(null);
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [nip99Busy, setNip99Busy] = useState(false);
   const [nip99Status, setNip99Status] = useState<string | null>(null);
   const [nip99Error, setNip99Error] = useState<string | null>(null);
+  const [nip99Published, setNip99Published] = useState(false);
 
   async function handlePublishAllToNostr() {
     setNip99Busy(true);
@@ -45,6 +46,7 @@ export default function DashboardPage() {
       setNip99Status(
         `✓ ${okCount}/${results.length} productos publicados como NIP-99 (kind:30402). Descubribles en relays Damus, Primal, Nostr.band, nos.lol.`
       );
+      setNip99Published(okCount > 0);
     } catch (e: any) {
       setNip99Error(e?.message ?? "Error publicando productos");
       setNip99Status(null);
@@ -355,6 +357,91 @@ export default function DashboardPage() {
             }}
           >
             ❌ {nip99Error}
+          </div>
+        )}
+        {/* Where your published listings can be seen */}
+        {(nip99Published || products.length > 0) && npub && (
+          <div
+            style={{
+              marginTop: 14,
+              padding: "12px 14px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              fontSize: 12,
+              lineHeight: 1.6,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: 1.2,
+                color: "var(--muted)",
+                fontWeight: 600,
+                marginBottom: 8,
+              }}
+            >
+              📡 Dónde ver tus listings
+            </div>
+            <p className="muted" style={{ fontSize: 12, margin: "0 0 10px", lineHeight: 1.5 }}>
+              Clientes generalistas (Damus, Primal) <strong>no</strong> muestran NIP-99
+              en tu feed — son un kind especializado. Estos explorers sí los indexan:
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <a
+                href={`https://nostr.band/${npub}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline"
+                style={{ fontSize: 11, padding: "5px 10px" }}
+              >
+                🔎 Nostr.band (tu perfil)
+              </a>
+              <a
+                href={`https://nostr.band/?q=kind:30402+by:${npub}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline"
+                style={{ fontSize: 11, padding: "5px 10px" }}
+              >
+                ⚜ Solo tus kind:30402
+              </a>
+              <a
+                href="https://plebeian.market"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline"
+                style={{ fontSize: 11, padding: "5px 10px" }}
+              >
+                🛍 Plebeian Market
+              </a>
+              <a
+                href="https://shopstr.store"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline"
+                style={{ fontSize: 11, padding: "5px 10px" }}
+              >
+                🛒 Shopstr
+              </a>
+              <a
+                href={`https://nostree.me/${npub}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline"
+                style={{ fontSize: 11, padding: "5px 10px" }}
+              >
+                🌳 Nostree
+              </a>
+            </div>
+            <p
+              className="muted"
+              style={{ fontSize: 11, margin: "10px 0 0", lineHeight: 1.5, fontStyle: "italic" }}
+            >
+              Después de publicar, Nostr.band suele tardar 1-3 min en re-indexar.
+              Plebeian Market y Shopstr pueden tardar más porque crawlean en batches.
+            </p>
           </div>
         )}
       </div>

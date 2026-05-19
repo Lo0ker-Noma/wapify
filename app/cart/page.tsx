@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { nip19 } from "nostr-tools";
 import { useCart } from "../components/CartProvider";
 import CheckoutPanel from "../components/CheckoutPanel";
 import { loadShipping, saveShipping, ShippingInfo } from "@/lib/cart";
 import { loadSettings } from "@/lib/settings";
+// window.nostr is already typed globally by AuthProvider.tsx — we only call
+// .getPublicKey() here so the existing declaration is enough.
 
 export default function CartPage() {
   const { items, count, totalSats, setQty, remove, clear } = useCart();
@@ -19,6 +22,31 @@ export default function CartPage() {
   const [phase, setPhase] = useState<"cart" | "shipping" | "pay">("cart");
   const [errors, setErrors] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [nostrBusy, setNostrBusy] = useState(false);
+  const [nostrError, setNostrError] = useState<string | null>(null);
+
+  async function fillFromNostrExtension() {
+    setNostrError(null);
+    if (typeof window === "undefined" || !window.nostr) {
+      setNostrError(
+        "No detectamos una extensión Nostr instalada (Alby, nos2x, Flamingo…). Instalá una y volvé a intentar."
+      );
+      return;
+    }
+    setNostrBusy(true);
+    try {
+      const pubkeyHex = await window.nostr.getPublicKey();
+      const npub = nip19.npubEncode(pubkeyHex);
+      setShipping((s) => ({ ...s, npub }));
+      setErrors(null);
+    } catch (e: any) {
+      setNostrError(
+        e?.message ?? "No pudimos leer tu npub. ¿Rechazaste el permiso?"
+      );
+    } finally {
+      setNostrBusy(false);
+    }
+  }
 
   useEffect(() => {
     setShipping(loadShipping());
@@ -359,19 +387,44 @@ export default function CartPage() {
                     </Field>
 
                     <Field label="Tu npub Nostr">
-                      <input
-                        className="wapu-input"
-                        value={shipping.npub ?? ""}
-                        onChange={(e) =>
-                          setShipping({ ...shipping, npub: e.target.value.trim() })
-                        }
-                        placeholder="npub1..."
-                        spellCheck={false}
-                        autoComplete="off"
-                      />
-                      <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 5, display: "block" }}>
-                        Si usás Nostr, copialo desde tu wallet (Alby, Primal, Damus…) para que te puedan DM
-                      </span>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          className="wapu-input"
+                          value={shipping.npub ?? ""}
+                          onChange={(e) =>
+                            setShipping({ ...shipping, npub: e.target.value.trim() })
+                          }
+                          placeholder="npub1..."
+                          spellCheck={false}
+                          autoComplete="off"
+                          style={{ flex: 1, minWidth: 0 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={fillFromNostrExtension}
+                          disabled={nostrBusy}
+                          className="btn btn-outline"
+                          style={{
+                            padding: "0 14px",
+                            whiteSpace: "nowrap",
+                            cursor: nostrBusy ? "wait" : "pointer",
+                            borderColor: "rgba(153,69,255,0.4)",
+                            color: "var(--lightning, #9945ff)",
+                          }}
+                          title="Pide tu npub a la extensión NIP-07 (Alby, nos2x, Flamingo…)"
+                        >
+                          {nostrBusy ? "🔑 …" : "🔑 Usar mi extensión"}
+                        </button>
+                      </div>
+                      {nostrError ? (
+                        <span style={{ fontSize: 11, color: "#fca5a5", marginTop: 6, display: "block" }}>
+                          {nostrError}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 5, display: "block" }}>
+                          Click en "Usar mi extensión" para que Alby / nos2x / Flamingo te firme la identificación, o pegá el npub manualmente.
+                        </span>
+                      )}
                     </Field>
 
                     <Field label="Notas para el retiro (opcional)">
@@ -459,16 +512,40 @@ export default function CartPage() {
                       />
                     </Field>
                     <Field label="Tu npub Nostr (opcional)">
-                      <input
-                        className="wapu-input"
-                        value={shipping.npub ?? ""}
-                        onChange={(e) =>
-                          setShipping({ ...shipping, npub: e.target.value.trim() })
-                        }
-                        placeholder="npub1… (para asociar tu pedido sin KYC)"
-                        spellCheck={false}
-                        autoComplete="off"
-                      />
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          className="wapu-input"
+                          value={shipping.npub ?? ""}
+                          onChange={(e) =>
+                            setShipping({ ...shipping, npub: e.target.value.trim() })
+                          }
+                          placeholder="npub1… (para asociar tu pedido sin KYC)"
+                          spellCheck={false}
+                          autoComplete="off"
+                          style={{ flex: 1, minWidth: 0 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={fillFromNostrExtension}
+                          disabled={nostrBusy}
+                          className="btn btn-outline"
+                          style={{
+                            padding: "0 14px",
+                            whiteSpace: "nowrap",
+                            cursor: nostrBusy ? "wait" : "pointer",
+                            borderColor: "rgba(153,69,255,0.4)",
+                            color: "var(--lightning, #9945ff)",
+                          }}
+                          title="Pide tu npub a la extensión NIP-07"
+                        >
+                          {nostrBusy ? "🔑 …" : "🔑 Extensión"}
+                        </button>
+                      </div>
+                      {nostrError && (
+                        <span style={{ fontSize: 11, color: "#fca5a5", marginTop: 6, display: "block" }}>
+                          {nostrError}
+                        </span>
+                      )}
                     </Field>
                     <Field label="Notas del envío (opcional)">
                       <textarea

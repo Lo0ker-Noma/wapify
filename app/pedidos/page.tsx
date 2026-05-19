@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "../components/AuthProvider";
 import { Order, loadOrders } from "@/lib/orders";
 import { downloadReceipt } from "@/lib/receipt";
+import { sendReceiptDm } from "@/lib/nostr-dm";
 
 function fmtTime(ms: number): string {
   const diffSec = Math.floor((Date.now() - ms) / 1000);
@@ -108,7 +109,34 @@ function OrderRow({ order }: { order: Order }) {
   const isPaid = order.status === "paid";
   const hasBuyer = !!(order.buyerName?.trim() || order.buyerNpub?.trim());
   const hasNote = !!order.buyerNote?.trim();
+  const hasNpub = !!order.buyerNpub?.trim();
   const [open, setOpen] = useState(false);
+  const [dmBusy, setDmBusy] = useState(false);
+  const [dmResult, setDmResult] = useState<string | null>(null);
+  const [dmError, setDmError] = useState<string | null>(null);
+
+  async function handleSendDm() {
+    setDmBusy(true);
+    setDmResult(null);
+    setDmError(null);
+    try {
+      const { results } = await sendReceiptDm(order);
+      const accepted = results.filter((r) => r.ok).length;
+      const total = results.length;
+      if (accepted === 0) {
+        const reasons = results
+          .map((r) => `${r.relay}: ${r.reason ?? "rechazado"}`)
+          .join(" · ");
+        setDmError(`Ningún relay aceptó la DM. ${reasons}`);
+      } else {
+        setDmResult(`✓ DM publicada en ${accepted}/${total} relays`);
+      }
+    } catch (e: any) {
+      setDmError(e?.message ?? "Error enviando DM");
+    } finally {
+      setDmBusy(false);
+    }
+  }
 
   return (
     <div
@@ -280,7 +308,44 @@ function OrderRow({ order }: { order: Order }) {
             📄 Descargar recibo
           </button>
         )}
+        {isPaid && hasNpub && (
+          <button
+            onClick={handleSendDm}
+            disabled={dmBusy}
+            className="btn btn-outline"
+            style={{
+              fontSize: 12,
+              padding: "6px 12px",
+              borderColor: "rgba(153,69,255,0.4)",
+              color: "#bf9bff",
+              cursor: dmBusy ? "wait" : "pointer",
+            }}
+            title="Encripta el recibo con NIP-04 y lo publica a relays Nostr addressed al npub del comprador"
+          >
+            {dmBusy ? "📨 …" : "📨 Enviar recibo por Nostr DM"}
+          </button>
+        )}
       </div>
+
+      {(dmResult || dmError) && (
+        <div
+          style={{
+            padding: "8px 12px",
+            borderRadius: 8,
+            fontSize: 12,
+            background: dmResult
+              ? "rgba(0,255,157,0.06)"
+              : "rgba(248,113,113,0.06)",
+            border: `1px solid ${
+              dmResult ? "rgba(0,255,157,0.3)" : "rgba(248,113,113,0.3)"
+            }`,
+            color: dmResult ? "var(--primary)" : "#fca5a5",
+            lineHeight: 1.5,
+          }}
+        >
+          {dmResult || dmError}
+        </div>
+      )}
 
       {/* Expanded detail */}
       {open && (

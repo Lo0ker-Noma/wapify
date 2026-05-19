@@ -410,6 +410,76 @@ export default function WapuPaymentPanel({
               Pagás con tu saldo de Wapu (USDT). Apuntamos a <code style={{ fontSize: 11 }}>be-stage.wapu.app</code>.
             </p>
           </div>
+
+          {/* W2: Pre-login checklist of what the buyer needs on their Wapu
+              staging account before this flow can succeed. Wapu staging does
+              NOT distinguish "wrong password" from "user not found" or "0
+              balance" with clear errors, so we tell the buyer up-front what
+              has to be true. */}
+          <div
+            style={{
+              padding: "12px 14px",
+              background: "rgba(255,200,0,0.06)",
+              border: "1px solid rgba(255,200,0,0.3)",
+              borderRadius: 10,
+              fontSize: 12,
+              lineHeight: 1.6,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 8, color: "#fde68a" }}>
+              ⚠ Antes de seguir, asegurate de que tu cuenta de Wapu staging tiene:
+            </div>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: 18,
+                color: "var(--text-secondary)",
+              }}
+            >
+              <li>
+                <strong style={{ color: "var(--text)" }}>Saldo en USDT</strong> —
+                Wapu staging no expone faucet, hay que depositar a las
+                addresses de tu cuenta (Tron / Solana / EVM).
+              </li>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Email verificado</strong>{" "}
+                — sin esto la cuenta queda en <code style={{ fontSize: 11 }}>state: pending</code>.
+              </li>
+              <li>
+                <strong style={{ color: "var(--text)" }}>
+                  <code style={{ fontSize: 11 }}>is_payer: true</code>
+                </strong>{" "}
+                — algunas cuentas nuevas necesitan que Wapu te marque como
+                payer (KYC tier 0 está limitado a 50 USDT por tx).
+              </li>
+            </ul>
+            <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <a
+                href="https://staging.wapu.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "var(--bitcoin)",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  textDecoration: "underline",
+                }}
+              >
+                Abrir staging.wapu.app →
+              </a>
+              <a
+                href="/settings"
+                style={{
+                  color: "var(--primary)",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  textDecoration: "underline",
+                }}
+              >
+                Diagnosticar mi cuenta en Settings →
+              </a>
+            </div>
+          </div>
           <Field label="Email Wapu">
             <input
               className="wapu-input"

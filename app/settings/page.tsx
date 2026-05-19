@@ -55,6 +55,40 @@ export default function SettingsPage() {
   const [hydrated, setHydrated] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
+  // ── W3: Wapu account self-test state ──────────────────────────────────
+  const [wapuTestEmail, setWapuTestEmail] = useState("");
+  const [wapuTestPassword, setWapuTestPassword] = useState("");
+  const [wapuTestBusy, setWapuTestBusy] = useState(false);
+  const [wapuTestResult, setWapuTestResult] = useState<any>(null);
+  const [wapuTestError, setWapuTestError] = useState<string | null>(null);
+
+  async function runWapuTest(e: React.FormEvent) {
+    e.preventDefault();
+    setWapuTestBusy(true);
+    setWapuTestError(null);
+    setWapuTestResult(null);
+    try {
+      const res = await fetch("/api/wapu/account-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: wapuTestEmail.trim(),
+          password: wapuTestPassword,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setWapuTestError(json.error ?? `Wapu respondió ${res.status}`);
+      } else {
+        setWapuTestResult(json);
+      }
+    } catch (err: any) {
+      setWapuTestError(err?.message ?? "Error de red");
+    } finally {
+      setWapuTestBusy(false);
+    }
+  }
+
   useEffect(() => {
     if (loading) return;
     if (!pubkey || !isAdmin) {
@@ -458,6 +492,195 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* ── W3: Wapu account self-test ─────────────────────────────── */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 20,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
+          🤖 Verificar mi cuenta Wapu
+        </h3>
+        <p className="muted" style={{ fontSize: 13, marginBottom: 16, lineHeight: 1.6 }}>
+          Wapu staging devuelve errores genéricos al pagar. Este test te dice
+          exactamente qué falta en tu cuenta para que la integración funcione
+          (saldo, email verificado, <code>is_payer</code>, KYC).
+          {" "}<strong>Las credenciales no se guardan</strong> — solo se usan en
+          este request server-side contra <code>be-stage.wapu.app</code>.
+        </p>
+
+        <form
+          onSubmit={runWapuTest}
+          style={{ display: "flex", flexDirection: "column", gap: 10 }}
+        >
+          <input
+            className="wapu-input"
+            type="email"
+            placeholder="Email de la cuenta Wapu"
+            value={wapuTestEmail}
+            onChange={(e) => setWapuTestEmail(e.target.value)}
+            required
+            autoComplete="off"
+          />
+          <input
+            className="wapu-input"
+            type="password"
+            placeholder="Contraseña Wapu"
+            value={wapuTestPassword}
+            onChange={(e) => setWapuTestPassword(e.target.value)}
+            required
+            autoComplete="off"
+          />
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={wapuTestBusy}
+            style={{ cursor: wapuTestBusy ? "wait" : "pointer" }}
+          >
+            {wapuTestBusy ? "Consultando Wapu…" : "🔎 Diagnosticar"}
+          </button>
+        </form>
+
+        {wapuTestError && (
+          <div
+            style={{
+              marginTop: 14,
+              padding: 12,
+              borderRadius: 8,
+              background: "rgba(248,113,113,0.06)",
+              border: "1px solid rgba(248,113,113,0.3)",
+              fontSize: 13,
+              color: "#fca5a5",
+            }}
+          >
+            <strong>❌ Error de Wapu:</strong> {wapuTestError}
+          </div>
+        )}
+
+        {wapuTestResult && (
+          <div style={{ marginTop: 14 }}>
+            <div
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                background:
+                  wapuTestResult.verdict?.canPay
+                    ? "rgba(0,255,157,0.06)"
+                    : "rgba(255,200,0,0.06)",
+                border: `1px solid ${
+                  wapuTestResult.verdict?.canPay
+                    ? "rgba(0,255,157,0.35)"
+                    : "rgba(255,200,0,0.3)"
+                }`,
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: wapuTestResult.verdict?.canPay ? "var(--primary)" : "#fde68a",
+                }}
+              >
+                {wapuTestResult.verdict?.canPay
+                  ? "✅ Lista para PAGAR"
+                  : "⚠ NO está lista para pagar"}
+                {wapuTestResult.verdict?.canReceive ? " · ✅ puede recibir" : " · ⚠ no puede recibir todavía"}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
+                Username: <code style={{ fontSize: 11 }}>{wapuTestResult.summary?.username}</code>
+                {" · "}LN: <code style={{ fontSize: 11 }}>{wapuTestResult.summary?.lightningAddress}</code>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 10,
+                marginBottom: 12,
+              }}
+            >
+              <DiagStat
+                label="Saldo USDT"
+                value={`${(wapuTestResult.summary?.usdtBalance ?? 0).toFixed(2)} USDT`}
+                pass={Number(wapuTestResult.summary?.usdtBalance ?? 0) > 0}
+              />
+              <DiagStat
+                label={`Saldo total (${wapuTestResult.summary?.combinedCurrency ?? "ARS"})`}
+                value={String(wapuTestResult.summary?.combinedBalance ?? 0)}
+                pass={Number(wapuTestResult.summary?.combinedBalance ?? 0) > 0}
+              />
+              <DiagStat
+                label="Email verificado"
+                value={wapuTestResult.summary?.emailVerified ? "Sí" : "No"}
+                pass={!!wapuTestResult.summary?.emailVerified}
+              />
+              <DiagStat
+                label="is_payer"
+                value={wapuTestResult.summary?.isPayer ? "true" : "false"}
+                pass={!!wapuTestResult.summary?.isPayer}
+              />
+              <DiagStat
+                label="Estado de cuenta"
+                value={wapuTestResult.summary?.state || "active"}
+                pass={
+                  !wapuTestResult.summary?.state ||
+                  wapuTestResult.summary?.state === "active"
+                }
+              />
+              <DiagStat
+                label={`KYC tier ${wapuTestResult.summary?.kycTier ?? 0}`}
+                value={wapuTestResult.summary?.kycStatus ?? "—"}
+                pass={(wapuTestResult.summary?.kycTier ?? 0) > 0}
+                warnOnly
+              />
+            </div>
+
+            <div
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  letterSpacing: 1.2,
+                  color: "var(--muted)",
+                  fontWeight: 600,
+                  marginBottom: 8,
+                }}
+              >
+                Checklist
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", fontSize: 13 }}>
+                {(wapuTestResult.checks || []).map((c: any) => (
+                  <li
+                    key={c.key}
+                    style={{ marginBottom: 6, lineHeight: 1.5 }}
+                  >
+                    {c.pass ? "✅ " : "❌ "}
+                    <strong style={{ color: "var(--text)" }}>{c.label}</strong>
+                    {c.hint && (
+                      <span style={{ color: "var(--muted)", marginLeft: 6 }}>
+                        — {c.hint}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ── AI prompt builder info ─────────────────────────────────── */}
       <div className="card" style={{ marginBottom: 24 }}>
         <h3
@@ -580,5 +803,56 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+function DiagStat({
+  label,
+  value,
+  pass,
+  warnOnly,
+}: {
+  label: string;
+  value: string;
+  pass: boolean;
+  warnOnly?: boolean;
+}) {
+  const okBg = "rgba(0,255,157,0.06)";
+  const failBg = warnOnly ? "rgba(255,200,0,0.06)" : "rgba(248,113,113,0.06)";
+  const okBorder = "rgba(0,255,157,0.3)";
+  const failBorder = warnOnly ? "rgba(255,200,0,0.3)" : "rgba(248,113,113,0.3)";
+  return (
+    <div
+      style={{
+        padding: 10,
+        borderRadius: 8,
+        background: pass ? okBg : failBg,
+        border: `1px solid ${pass ? okBorder : failBorder}`,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          textTransform: "uppercase",
+          letterSpacing: 1.2,
+          color: "var(--muted)",
+          fontWeight: 600,
+          marginBottom: 4,
+        }}
+      >
+        {pass ? "✅" : warnOnly ? "⚠" : "❌"} {label}
+      </div>
+      <div
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 14,
+          fontWeight: 700,
+          color: "var(--text)",
+          wordBreak: "break-all",
+        }}
+      >
+        {value}
+      </div>
+    </div>
   );
 }

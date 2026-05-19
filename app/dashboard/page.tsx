@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "../components/AuthProvider";
 import ExportModal from "../components/ExportModal";
 import { Product, loadProductsWithServerSync, saveProducts } from "@/lib/products";
+import { publishAllProductsAsNip99 } from "@/lib/nostr-products";
 import { loadSettings, StoreSettings } from "@/lib/settings";
 import { loadOrders, Order } from "@/lib/orders";
 import { loadStoreMeta, StoreMeta } from "@/lib/store-meta";
@@ -19,6 +20,38 @@ export default function DashboardPage() {
   const [meta, setMeta] = useState<StoreMeta | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [nip99Busy, setNip99Busy] = useState(false);
+  const [nip99Status, setNip99Status] = useState<string | null>(null);
+  const [nip99Error, setNip99Error] = useState<string | null>(null);
+
+  async function handlePublishAllToNostr() {
+    setNip99Busy(true);
+    setNip99Status("Firmando primer producto…");
+    setNip99Error(null);
+    try {
+      const results = await publishAllProductsAsNip99(
+        products,
+        "lacrypta",
+        "LaCrypta",
+        (done, total, last) => {
+          const accepted = last?.results.filter((r) => r.ok).length ?? 0;
+          const totalR = last?.results.length ?? 0;
+          setNip99Status(
+            `${done}/${total} — "${last?.product.name}" → ${accepted}/${totalR} relays`
+          );
+        }
+      );
+      const okCount = results.filter((r) => r.results.some((x) => x.ok)).length;
+      setNip99Status(
+        `✓ ${okCount}/${results.length} productos publicados como NIP-99 (kind:30402). Descubribles en relays Damus, Primal, Nostr.band, nos.lol.`
+      );
+    } catch (e: any) {
+      setNip99Error(e?.message ?? "Error publicando productos");
+      setNip99Status(null);
+    } finally {
+      setNip99Busy(false);
+    }
+  }
   const [newProduct, setNewProduct] = useState({ name: "", subtitle: "", price: "", img: "", tag: "" });
 
   useEffect(() => {
@@ -228,6 +261,102 @@ export default function DashboardPage() {
         <Link href="/settings" className="btn btn-outline">
           Cambiar
         </Link>
+      </div>
+
+      {/* ── N1: Publish all products as NIP-99 events ───────────────── */}
+      <div
+        className="card"
+        style={{
+          marginBottom: 24,
+          padding: 18,
+          background:
+            "linear-gradient(135deg, rgba(153,69,255,0.08), rgba(0,255,157,0.05))",
+          border: "1px solid rgba(153,69,255,0.25)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div
+              style={{
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: 1.5,
+                color: "#bf9bff",
+                fontWeight: 700,
+                marginBottom: 4,
+              }}
+            >
+              ⚜ NIP-99 · Classified Listings
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 17,
+                fontWeight: 700,
+                marginBottom: 4,
+              }}
+            >
+              Publicá tu catálogo en la red Nostr
+            </div>
+            <p className="muted" style={{ fontSize: 13, margin: 0, lineHeight: 1.5, maxWidth: 480 }}>
+              Cada producto se firma con tu npub (NIP-07) y se publica como{" "}
+              <code style={{ fontSize: 11 }}>kind:30402</code> en 4 relays
+              públicos. Cualquier cliente Nostr (Plebeian Market, nostree.me,
+              Damus, Primal) lo va a poder descubrir <strong>sin pedirnos permiso</strong>.
+            </p>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={handlePublishAllToNostr}
+            disabled={nip99Busy || products.length === 0}
+            style={{
+              minWidth: 180,
+              cursor: nip99Busy ? "wait" : "pointer",
+            }}
+          >
+            {nip99Busy
+              ? "Publicando…"
+              : `⚜ Publicar ${products.length} productos`}
+          </button>
+        </div>
+        {nip99Status && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: "8px 12px",
+              borderRadius: 8,
+              background: "rgba(0,255,157,0.06)",
+              border: "1px solid rgba(0,255,157,0.25)",
+              fontSize: 12,
+              color: "var(--primary)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {nip99Status}
+          </div>
+        )}
+        {nip99Error && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: "8px 12px",
+              borderRadius: 8,
+              background: "rgba(248,113,113,0.06)",
+              border: "1px solid rgba(248,113,113,0.3)",
+              fontSize: 12,
+              color: "#fca5a5",
+            }}
+          >
+            ❌ {nip99Error}
+          </div>
+        )}
       </div>
 
       <h2

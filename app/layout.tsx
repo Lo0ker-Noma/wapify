@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import MobileCartBar from "./components/MobileCartBar";
 import { AuthProvider } from "./components/AuthProvider";
 import { CartProvider } from "./components/CartProvider";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
           <CartProvider>
             <Navbar />
             {children}
+            <MobileCartBar />
             <Footer />
           </CartProvider>
         </AuthProvider>

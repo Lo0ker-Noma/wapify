@@ -6,6 +6,7 @@ import { Product } from "@/lib/products";
 import CheckoutPanel from "./CheckoutPanel";
 import { useCart } from "./CartProvider";
 import { useAuth } from "./AuthProvider";
+import { useBtcPrice, satsToUsdStr } from "@/lib/use-btc-price";
 
 export default function ProductDetailModal({
   product,
@@ -27,6 +28,7 @@ export default function ProductDetailModal({
   const [buyerNpub, setBuyerNpub] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [buyerError, setBuyerError] = useState<string | null>(null);
+  const { price: btcPrice } = useBtcPrice();
 
   // Auto-fill from logged-in Nostr identity
   useEffect(() => {
@@ -187,6 +189,19 @@ export default function ProductDetailModal({
             >
               ⚡ {product.price.toLocaleString("es-AR")} sats
             </div>
+            {btcPrice && (
+              <div
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 13,
+                  color: "var(--muted)",
+                  marginTop: -14,
+                  marginBottom: 18,
+                }}
+              >
+                ≈ {satsToUsdStr(product.price, btcPrice.usd)} USD
+              </div>
+            )}
 
             {!showCheckout ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
